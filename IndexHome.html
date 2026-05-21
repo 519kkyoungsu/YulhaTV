@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>김해율하TV 가정 알림판</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #1a3a5c;
+  --primary-dark: #14304a;
+  --accent: #e8a020;
+  --bg: #000000;
+  --card-bg: #ffffff;
+  --text: #1c1810;
+  --text-muted: #6b6050;
+  --border: rgba(28,24,16,0.1);
+  --shadow: rgba(0,0,0,0.08);
+  --ok: #2d6e3a;
+  --ok-bg: #dcf0de;
+  --tv3: #2d6e3a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --card-bg: #1e1e1e;
+    --text: #e8e8e8;
+    --text-muted: #a0a0a0;
+    --border: rgba(255,255,255,0.1);
+    --shadow: rgba(0,0,0,0.5);
+    --ok-bg: rgba(45,110,58,0.2);
+  }
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  overscroll-behavior-y: none;
+}
+
+/* ══════════════════════════════════════════
+   헤더 (미니멀)
+══════════════════════════════════════════ */
+.header {
+  background: linear-gradient(135deg, var(--primary) 0%, #2d5f8a 100%);
+  color: white;
+  padding: 1.25rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  backdrop-filter: blur(20px);
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.logo-icon {
+  width: 48px;
+  height: 48px;
+  background: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  overflow: hidden;
+}
+
+.logo-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.header-title {
+  min-width: 0;
+}
+
+.header-title h1 {
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 2px;
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-title p {
+  font-size: 12px;
+  opacity: 0.7;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #6ee07f;
+  display: inline-block;
+  animation: pulse 2s infinite;
+  box-shadow: 0 0 8px rgba(110, 224, 127, 0.6);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.refresh-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.12);
+  border: none;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.refresh-btn:active {
+  transform: scale(0.92) rotate(90deg);
+  background: rgba(255,255,255,0.2);
+}
+
+/* ══════════════════════════════════════════
+   로딩
+══════════════════════════════════════════ */
+.loading {
+  text-align: center;
+  padding: 4rem 1.5rem;
+  color: rgba(255,255,255,0.5);
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(255,255,255,0.1);
+  border-top-color: rgba(255,255,255,0.6);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 1.5rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading p {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* ══════════════════════════════════════════
+   엠티 상태
+══════════════════════════════════════════ */
+.empty {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: rgba(255,255,255,0.4);
+}
+
+.empty-icon {
+  font-size: 64px;
+  margin-bottom: 1.5rem;
+  opacity: 0.3;
+  filter: grayscale(1);
+}
+
+.empty h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: rgba(255,255,255,0.7);
+}
+
+.empty p {
+  font-size: 14px;
+  line-height: 1.8;
+  color: rgba(255,255,255,0.4);
+}
+
+/* ══════════════════════════════════════════
+   히어로 섹션 (첫 번째 공지)
+══════════════════════════════════════════ */
+.hero-section {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 90px);
+  min-height: 480px;
+  max-height: 720px;
+  overflow: hidden;
+  cursor: pointer;
+  background: #0a0a0a;
+}
+
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(0.85);
+  transition: transform 0.3s ease-out;
+}
+
+.hero-section:active .hero-bg {
+  transform: scale(1.05);
+}
+
+.hero-video-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1a3a5c 0%, #2d6e3a 100%);
+}
+
+.hero-video-bg .play-icon {
+  font-size: 72px;
+  opacity: 0.9;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+  color: white;
+}
+
+.hero-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg,
+    rgba(0,0,0,0.2) 0%,
+    rgba(0,0,0,0) 30%,
+    rgba(0,0,0,0) 60%,
+    rgba(0,0,0,0.85) 100%);
+  pointer-events: none;
+}
+
+.hero-content {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 2rem 1.5rem 1.75rem;
+  color: white;
+  z-index: 2;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0.4rem 0.9rem;
+  background: rgba(45,110,58,0.95);
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.hero-title {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.3;
+  margin-bottom: 0.75rem;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.5);
+  letter-spacing: -0.5px;
+}
+
+.hero-meta {
+  font-size: 13px;
+  opacity: 0.85;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.hero-meta .dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.5);
+}
+
+/* ══════════════════════════════════════════
+   갤러리 섹션 (나머지 공지들)
+══════════════════════════════════════════ */
+.gallery-section {
+  padding: 1.5rem 0 3rem;
+  background: linear-gradient(180deg, #000000 0%, #0a0a0a 100%);
+}
+
+.gallery-header {
+  padding: 0 1.5rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.gallery-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: white;
+  letter-spacing: -0.3px;
+}
+
+.gallery-count {
+  font-size: 13px;
+  color: rgba(255,255,255,0.5);
+  font-weight: 600;
+}
+
+.gallery-scroll {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  padding: 0 1.5rem 1rem;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.gallery-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.gallery-item {
+  flex-shrink: 0;
+  width: 280px;
+  scroll-snap-align: start;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.gallery-item:active {
+  transform: scale(0.97);
+}
+
+.gallery-thumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #1a1a1a;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+
+.gallery-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.gallery-item:active .gallery-img {
+  transform: scale(1.08);
+}
+
+.gallery-video-thumb {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1a3a5c 0%, #2d6e3a 100%);
+  position: relative;
+}
+
+.gallery-video-thumb::before {
+  content: '▶';
+  position: absolute;
+  font-size: 32px;
+  color: white;
+  opacity: 0.9;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+.gallery-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 4px 10px;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(8px);
+  border-radius: 16px;
+  font-size: 10px;
+  font-weight: 700;
+  color: white;
+}
+
+.gallery-info {
+  padding: 0 4px;
+}
+
+.gallery-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 4px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.gallery-date {
+  font-size: 12px;
+  color: rgba(255,255,255,0.45);
+  font-weight: 500;
+}
+
+/* ══════════════════════════════════════════
+   전체화면 뷰어 (스토리 스타일)
+══════════════════════════════════════════ */
+.viewer {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: #000;
+  z-index: 2000;
+  overflow: hidden;
+}
+
+.viewer.open {
+  display: block;
+}
+
+.viewer-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.viewer-slides {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+.viewer-slide {
+  flex-shrink: 0;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+}
+
+.viewer-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.viewer-video {
+  width: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: 16 / 9;
+  border: none;
+}
+
+.viewer-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, transparent 100%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.viewer-progress {
+  flex: 1;
+  height: 3px;
+  background: rgba(255,255,255,0.25);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.viewer-progress-fill {
+  height: 100%;
+  background: white;
+  border-radius: 2px;
+  transition: width 0.3s;
+}
+
+.viewer-close {
+  width: 36px;
+  height: 36px;
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(10px);
+  border: none;
+  border-radius: 50%;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.viewer-close:active {
+  background: rgba(255,255,255,0.25);
+}
+
+.viewer-footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1.5rem 1.5rem 2rem;
+  background: linear-gradient(0deg, rgba(0,0,0,0.85) 0%, transparent 100%);
+  color: white;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.viewer-title {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+
+.viewer-memo {
+  font-size: 14px;
+  opacity: 0.85;
+  line-height: 1.6;
+  margin-bottom: 0.75rem;
+}
+
+.viewer-meta {
+  font-size: 12px;
+  opacity: 0.65;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.viewer-meta .dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.5);
+}
+
+/* ══════════════════════════════════════════
+   스와이프 네비게이션
+══════════════════════════════════════════ */
+.nav-hint {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  background: rgba(255,255,255,0.12);
+  backdrop-filter: blur(8px);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 20px;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+  z-index: 15;
+}
+
+.nav-hint.left {
+  left: 1rem;
+}
+
+.nav-hint.right {
+  right: 1rem;
+}
+
+.viewer:hover .nav-hint {
+  opacity: 0.6;
+}
+
+/* ══════════════════════════════════════════
+   반응형
+══════════════════════════════════════════ */
+@media (min-width: 640px) {
+  .header {
+    padding: 1.5rem 2rem;
+  }
+
+  .gallery-scroll {
+    padding: 0 2rem 1.5rem;
+  }
+
+  .gallery-header {
+    padding: 0 2rem 1.25rem;
+  }
+
+  .gallery-item {
+    width: 320px;
+  }
+
+  .hero-section {
+    max-height: 800px;
+  }
+
+  .hero-content {
+    padding: 3rem 2rem 2.5rem;
+  }
+
+  .hero-title {
+    font-size: 32px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .hero-section {
+    max-height: 70vh;
+  }
+
+  .gallery-item {
+    width: 360px;
+  }
+}
+
+/* ══════════════════════════════════════════
+   유틸리티
+══════════════════════════════════════════ */
+.hidden {
+  display: none !important;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="logo-section">
+      <div class="logo-icon">
+        <!-- 김해율하TV 로고 (드라이브 썸네일) -->
+        <img src="https://drive.google.com/thumbnail?id=1aygKWfwt2q_xo7eR7QqALViI8QANCnlO&sz=w200" alt="김해율하TV 로고"
+             onerror="this.style.display='none';this.parentNode.innerHTML='🏫';this.parentNode.style.background='linear-gradient(135deg,#e8a020 0%,#f0b840 100%)';">
+      </div>
+      <div class="header-title">
+        <h1>김해율하TV</h1>
+        <p><span class="live-dot"></span> 학부모 가정 알림판</p>
+      </div>
+    </div>
+    <button class="refresh-btn" onclick="loadNotices()" title="새로고침">🔄</button>
+  </div>
+</div>
+
+<div id="main-container">
+  <div class="loading">
+    <div class="loading-spinner"></div>
+    <p>공지를 불러오는 중...</p>
+  </div>
+</div>
+
+<!-- 전체화면 뷰어 (스토리 스타일) -->
+<div class="viewer" id="viewer">
+  <div class="viewer-container">
+    <div class="viewer-header">
+      <div class="viewer-progress">
+        <div class="viewer-progress-fill" id="viewer-progress"></div>
+      </div>
+      <button class="viewer-close" onclick="closeViewer()">✕</button>
+    </div>
+
+    <div class="viewer-slides" id="viewer-slides"></div>
+
+    <div class="nav-hint left">‹</div>
+    <div class="nav-hint right">›</div>
+
+    <div class="viewer-footer" id="viewer-footer">
+      <div class="viewer-title" id="viewer-title"></div>
+      <div class="viewer-memo" id="viewer-memo"></div>
+      <div class="viewer-meta" id="viewer-meta"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+//  전역 상태 (학부모 TV 단일 채널)
+// ══════════════════════════════════════════════════════════════
+var CHANNEL = 'tv3';
+var currentNotices = [];
+var viewerIndex = 0;
+var touchStartX = 0;
+var touchEndX = 0;
+
+var TIME_SLOTS = {
+  arrival:   { name: '🌅 등교',   short: '등교' },
+  morning:   { name: '☀ 오전',   short: '오전' },
+  lunch:     { name: '🍱 점심',   short: '점심' },
+  afternoon: { name: '📚 오후',   short: '오후' },
+  evening:   { name: '🌆 저녁',   short: '저녁' },
+  always:    { name: '⭐ 항상',   short: '항상' }
+};
+
+// ══════════════════════════════════════════════════════════════
+//  초기화
+// ══════════════════════════════════════════════════════════════
+window.onload = function() {
+  loadNotices();
+};
+
+// ══════════════════════════════════════════════════════════════
+//  공지 불러오기
+// ══════════════════════════════════════════════════════════════
+function loadNotices() {
+  var container = document.getElementById('main-container');
+  container.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>공지를 불러오는 중...</p></div>';
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (!res.success) {
+        showError(res.error || '공지를 불러올 수 없습니다.');
+        return;
+      }
+      currentNotices = res.notices || [];
+      renderNotices();
+    })
+    .withFailureHandler(function(err) {
+      showError('오류: ' + (err && err.message ? err.message : err));
+    })
+    .getHomeNotices(CHANNEL);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  공지 렌더링 (히어로 + 갤러리)
+// ══════════════════════════════════════════════════════════════
+function renderNotices() {
+  var container = document.getElementById('main-container');
+
+  if (!currentNotices.length) {
+    container.innerHTML =
+      '<div class="empty">' +
+        '<div class="empty-icon">📋</div>' +
+        '<h3>현재 게시 중인 공지가 없습니다</h3>' +
+        '<p>새로운 공지가 등록되면<br>이곳에 안내됩니다.</p>' +
+      '</div>';
+    return;
+  }
+
+  var html = '';
+
+  // 1) 히어로 섹션 (첫 번째 공지)
+  var hero = currentNotices[0];
+  var heroDate = formatDate(hero);
+
+  if (hero.type === 'image') {
+    html +=
+      '<div class="hero-section" onclick="openViewer(0)">' +
+        '<img class="hero-bg" src="https://drive.google.com/thumbnail?id=' + hero.id + '&sz=w1200" alt="' + esc(hero.name) + '" loading="eager">' +
+        '<div class="hero-gradient"></div>' +
+        '<div class="hero-content">' +
+          '<div class="hero-badge">✓ 게시중</div>' +
+          '<div class="hero-title">' + esc(hero.name.replace(/\.[^.]+$/, '')) + '</div>' +
+          '<div class="hero-meta">' +
+            (heroDate ? heroDate + '<span class="dot"></span>' : '') +
+            '<span>' + currentNotices.length + '개의 공지</span>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+  } else {
+    html +=
+      '<div class="hero-section" onclick="openViewer(0)">' +
+        '<div class="hero-video-bg"><div class="play-icon">▶</div></div>' +
+        '<div class="hero-gradient"></div>' +
+        '<div class="hero-content">' +
+          '<div class="hero-badge">✓ 게시중 · 동영상</div>' +
+          '<div class="hero-title">' + esc(hero.name.replace(/\.[^.]+$/, '')) + '</div>' +
+          '<div class="hero-meta">' +
+            (heroDate ? heroDate + '<span class="dot"></span>' : '') +
+            '<span>' + currentNotices.length + '개의 공지</span>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+  }
+
+  // 2) 갤러리 섹션 (나머지 공지들)
+  if (currentNotices.length > 1) {
+    var galleryItems = currentNotices.slice(1).map(function(notice, idx) {
+      var realIdx = idx + 1;
+      var thumbHtml;
+
+      if (notice.type === 'image') {
+        thumbHtml =
+          '<img class="gallery-img" src="https://drive.google.com/thumbnail?id=' + notice.id + '&sz=w600" ' +
+               'alt="' + esc(notice.name) + '" loading="lazy">';
+      } else {
+        thumbHtml = '<div class="gallery-video-thumb"></div>';
+      }
+
+      return (
+        '<div class="gallery-item" onclick="openViewer(' + realIdx + ')">' +
+          '<div class="gallery-thumb">' +
+            thumbHtml +
+            '<div class="gallery-badge">' + (notice.type === 'video' ? '영상' : '이미지') + '</div>' +
+          '</div>' +
+          '<div class="gallery-info">' +
+            '<div class="gallery-name">' + esc(notice.name.replace(/\.[^.]+$/, '')) + '</div>' +
+            '<div class="gallery-date">' + formatDate(notice) + '</div>' +
+          '</div>' +
+        '</div>'
+      );
+    }).join('');
+
+    html +=
+      '<div class="gallery-section">' +
+        '<div class="gallery-header">' +
+          '<div class="gallery-title">더 보기</div>' +
+          '<div class="gallery-count">+' + (currentNotices.length - 1) + '</div>' +
+        '</div>' +
+        '<div class="gallery-scroll">' + galleryItems + '</div>' +
+      '</div>';
+  }
+
+  container.innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  전체화면 뷰어 (스와이프)
+// ══════════════════════════════════════════════════════════════
+function openViewer(startIdx) {
+  viewerIndex = startIdx;
+
+  // 모든 슬라이드 생성
+  var slidesHtml = currentNotices.map(function(notice, idx) {
+    var contentHtml;
+
+    if (notice.type === 'image') {
+      contentHtml = '<img class="viewer-img" src="https://drive.google.com/thumbnail?id=' + notice.id + '&sz=w1600" alt="' + esc(notice.name) + '">';
+    } else {
+      contentHtml = '<iframe class="viewer-video" src="https://drive.google.com/file/d/' + notice.id + '/preview" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>';
+    }
+
+    return '<div class="viewer-slide">' + contentHtml + '</div>';
+  }).join('');
+
+  document.getElementById('viewer-slides').innerHTML = slidesHtml;
+  updateViewerInfo();
+
+  var viewer = document.getElementById('viewer');
+  viewer.classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  // 터치 이벤트
+  var slides = document.getElementById('viewer-slides');
+  slides.addEventListener('touchstart', handleTouchStart, { passive: true });
+  slides.addEventListener('touchmove', handleTouchMove, { passive: true });
+  slides.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+  // 키보드 이벤트
+  document.addEventListener('keydown', handleKeyboard);
+}
+
+function closeViewer() {
+  var viewer = document.getElementById('viewer');
+  viewer.classList.remove('open');
+  document.body.style.overflow = '';
+
+  // 이벤트 제거
+  var slides = document.getElementById('viewer-slides');
+  slides.removeEventListener('touchstart', handleTouchStart);
+  slides.removeEventListener('touchmove', handleTouchMove);
+  slides.removeEventListener('touchend', handleTouchEnd);
+  document.removeEventListener('keydown', handleKeyboard);
+
+  // iframe 정리 (재생 중인 동영상 정지)
+  setTimeout(function() {
+    document.getElementById('viewer-slides').innerHTML = '';
+  }, 300);
+}
+
+function updateViewerInfo() {
+  var notice = currentNotices[viewerIndex];
+  if (!notice) return;
+
+  document.getElementById('viewer-title').textContent = notice.name.replace(/\.[^.]+$/, '');
+  document.getElementById('viewer-memo').textContent = notice.memo || '';
+  document.getElementById('viewer-memo').style.display = notice.memo ? 'block' : 'none';
+
+  var metaHtml = '';
+  var date = formatDate(notice);
+  if (date) metaHtml += date;
+  if (notice.timeSlots && notice.timeSlots.length) {
+    var slots = notice.timeSlots.map(function(s) {
+      return TIME_SLOTS[s] ? TIME_SLOTS[s].short : '';
+    }).filter(Boolean).join(' · ');
+    if (slots) {
+      if (metaHtml) metaHtml += '<span class="dot"></span>';
+      metaHtml += slots;
+    }
+  }
+  document.getElementById('viewer-meta').innerHTML = metaHtml;
+
+  // 프로그레스 바
+  var progress = ((viewerIndex + 1) / currentNotices.length) * 100;
+  document.getElementById('viewer-progress').style.width = progress + '%';
+
+  // 슬라이드 이동
+  var slides = document.getElementById('viewer-slides');
+  slides.style.transform = 'translateX(-' + (viewerIndex * 100) + '%)';
+}
+
+function nextSlide() {
+  if (viewerIndex < currentNotices.length - 1) {
+    viewerIndex++;
+    updateViewerInfo();
+  }
+}
+
+function prevSlide() {
+  if (viewerIndex > 0) {
+    viewerIndex--;
+    updateViewerInfo();
+  }
+}
+
+// 터치 핸들러
+function handleTouchStart(e) {
+  touchStartX = e.touches[0].clientX;
+  touchEndX = touchStartX;
+}
+
+function handleTouchMove(e) {
+  touchEndX = e.touches[0].clientX;
+}
+
+function handleTouchEnd() {
+  var diff = touchStartX - touchEndX;
+
+  if (Math.abs(diff) > 50) {
+    if (diff > 0) nextSlide();
+    else prevSlide();
+  }
+
+  touchStartX = 0;
+  touchEndX = 0;
+}
+
+// 키보드 핸들러
+function handleKeyboard(e) {
+  if (e.key === 'ArrowRight') nextSlide();
+  else if (e.key === 'ArrowLeft') prevSlide();
+  else if (e.key === 'Escape') closeViewer();
+}
+
+// ══════════════════════════════════════════════════════════════
+//  유틸리티
+// ══════════════════════════════════════════════════════════════
+function formatDate(notice) {
+  if (notice.startDate && notice.endDate) {
+    return notice.startDate.slice(5).replace('-', '/') + ' ~ ' + notice.endDate.slice(5).replace('-', '/');
+  } else if (notice.startDate) {
+    return notice.startDate.slice(5).replace('-', '/') + ' ~';
+  } else if (notice.endDate) {
+    return '~ ' + notice.endDate.slice(5).replace('-', '/');
+  }
+  return '';
+}
+
+function showError(msg) {
+  var container = document.getElementById('main-container');
+  container.innerHTML =
+    '<div class="empty">' +
+      '<div class="empty-icon">⚠️</div>' +
+      '<h3>오류가 발생했습니다</h3>' +
+      '<p>' + esc(msg) + '</p>' +
+    '</div>';
+}
+
+function esc(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+</script>
+
+</body>
+</html>
