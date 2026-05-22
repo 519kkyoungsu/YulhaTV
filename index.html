@@ -17,48 +17,21 @@
         body {
             margin: 0;
             padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #2E4B8E 0%, #4A6FA5 100%);
         }
-        .loader {
-            text-align: center;
-            color: white;
-        }
-        .spinner {
-            border: 4px solid rgba(255,255,255,0.3);
-            border-top: 4px solid white;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        h2 {
-            margin: 0;
-            font-size: 20px;
-            font-weight: 500;
-        }
-        p {
-            margin: 10px 0 0;
-            font-size: 14px;
-            opacity: 0.9;
+        iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
         }
     </style>
 </head>
 <body>
-    <div class="loader">
-        <div class="spinner"></div>
-        <h2>김해율하고 진로진학 AI</h2>
-        <p>로딩 중...</p>
-    </div>
+    <!-- GAS 앱을 iframe으로 임베드 -->
+    <iframe src="https://script.google.com/macros/s/AKfycbyRjT2r_bukrSTe0QSk4TZb3Bb-41Ja6O1C-wwWzVxx5lCjf1S7lKygRNWwEOns-Tbc/exec"></iframe>
     
     <script>
         // 서비스 워커 등록
@@ -67,9 +40,6 @@
                 .then(reg => console.log('Service Worker 등록 성공:', reg))
                 .catch(err => console.log('Service Worker 등록 실패:', err));
         }
-        
-        // GAS 앱으로 리다이렉트
-        window.location.href = 'https://script.google.com/macros/s/AKfycbyRjT2r_bukrSTe0QSk4TZb3Bb-41Ja6O1C-wwWzVxx5lCjf1S7lKygRNWwEOns-Tbc/exec';
     </script>
 </body>
 </html>
