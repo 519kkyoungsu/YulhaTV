@@ -2,24 +2,36 @@
   "name": "김해율하고 진로진학 AI",
   "short_name": "진로진학",
   "description": "김해율하고등학교 대입 일정 캘린더",
-  "start_url": "https://519kkyoungsu.github.io/YulhaTV/",
-  "scope": "https://519kkyoungsu.github.io/YulhaTV/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#ffffff",
+  "background_color": "#2E4B8E",
   "theme_color": "#2E4B8E",
   "icons": [
     {
-      "src": "https://519kkyoungsu.github.io/YulhaTV/icon-192.png",
+      "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "https://519kkyoungsu.github.io/YulhaTV/icon-512.png",
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
