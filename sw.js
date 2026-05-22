@@ -1,16 +1,30 @@
-const CACHE_NAME = 'yulha-connect-v1';
+const CACHE_NAME = 'yulha-v1';
+const urlsToCache = [
+    './',
+    './index.html',
+    './manifest.json',
+    './icon-192.png',
+    './icon-512.png'
+];
 
+// 설치
 self.addEventListener('install', (event) => {
-  console.log('Service Worker 설치됨');
-  self.skipWaiting();
+    event.waitUntil(
+        caches.open(CACHE_NAME)
+            .then(cache => cache.addAll(urlsToCache))
+    );
+    self.skipWaiting();
 });
 
+// 활성화
 self.addEventListener('activate', (event) => {
-  console.log('Service Worker 활성화됨');
-  event.waitUntil(clients.claim());
+    event.waitUntil(clients.claim());
 });
 
+// fetch 이벤트 (PWA 설치 기준에 필수!)
 self.addEventListener('fetch', (event) => {
-  // GAS URL로의 요청은 그대로 통과
-  event.respondWith(fetch(event.request));
+    event.respondWith(
+        caches.match(event.request)
+            .then(response => response || fetch(event.request))
+    );
 });
