@@ -1,499 +1,2344 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<base target="_top">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1e3a8a">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+  :root {
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-top: env(safe-area-inset-top, 0px);
+  }
+
+  * { -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f8fafc;
+    color: #1e293b;
+    margin: 0;
+    padding: 0;
+    overscroll-behavior-y: none;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ═══════════════════ 로그인 오버레이 ═══════════════════ */
+  #login-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #3b82f6 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+  #login-overlay.hidden { display: none; }
+
+  .login-card {
+    background: white;
+    border-radius: 1.5rem;
+    padding: 2rem 1.5rem;
+    width: 100%;
+    max-width: 380px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.3);
+  }
+
+  .auto-login-btn {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: white;
+    border: none;
+    border-radius: 1rem;
+    padding: 1.1rem;
+    width: 100%;
+    font-size: 1rem;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(37,99,235,0.35);
+    transition: transform 0.15s;
+    font-family: inherit;
+  }
+  .auto-login-btn:active { transform: scale(0.97); }
+
+  .login-input {
+    width: 100%;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 0.85rem;
+    padding: 0.85rem 1rem;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: inherit;
+    box-sizing: border-box;
+  }
+  .login-input:focus { border-color: #2563eb; }
+
+  .remember-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+  }
+  .remember-toggle input[type="checkbox"] {
+    width: 18px; height: 18px;
+    accent-color: #2563eb;
+    cursor: pointer;
+  }
+  .remember-toggle label {
+    font-size: 0.85rem;
+    color: #475569;
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  /* ═══════════════════ 앱 헤더 ═══════════════════ */
+  .app-header {
+    background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+    color: white;
+    padding: calc(var(--safe-top) + 0.85rem) 1rem 0.85rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+  }
+  .header-row { display: flex; align-items: center; gap: 0.75rem; }
+  .header-logo {
+    width: 38px; height: 38px;
+    background: white;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .header-logo img { width: 100%; height: 100%; object-fit: cover; }
+  .header-title { flex: 1; min-width: 0; }
+  .header-title h1 { font-size: 15px; font-weight: 800; letter-spacing: -0.3px; }
+  .header-title p { font-size: 11px; opacity: 0.85; font-weight: 500; }
+
+  .header-actions { display: flex; gap: 6px; }
+  .header-btn {
+    width: 34px; height: 34px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.18);
+    border: none;
+    color: white;
+    font-size: 15px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+  .header-btn:active { background: rgba(255,255,255,0.3); }
+
+  .admin-badge {
+    background: #fbbf24;
+    color: #78350f;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 8px;
+    display: inline-block;
+    margin-top: 2px;
+  }
+
+  /* ═══════════════════ 메인 컨텐츠 ═══════════════════ */
+  main {
+    padding-bottom: calc(80px + var(--safe-bottom));
+    min-height: calc(100vh - 70px);
+  }
+  .section { display: none; padding: 1rem; animation: fadeIn 0.25s; }
+  .section.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  #sec-tv { padding: 0; }
+
+  .section-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 1rem;
+    letter-spacing: -0.4px;
+  }
+
+  .card {
+    background: white;
+    border-radius: 1.25rem;
+    padding: 1.1rem;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    margin-bottom: 0.75rem;
+  }
+  .card-link {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    text-decoration: none;
+    color: inherit;
+  }
+  .card-link:active { transform: scale(0.98); }
+
+  /* ═══════════════════ 하단 탭바 ═══════════════════ */
+  .bottom-tabs {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    z-index: 90;
+    padding-bottom: var(--safe-bottom);
+    box-shadow: 0 -4px 12px rgba(0,0,0,0.04);
+  }
+  .tab-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    padding: 0.6rem 0.25rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    cursor: pointer;
+    color: #94a3b8;
+    font-family: inherit;
+    transition: color 0.15s;
+  }
+  .tab-btn .tab-icon { font-size: 22px; line-height: 1; }
+  .tab-btn .tab-label { font-size: 10px; font-weight: 700; }
+  .tab-btn.active { color: #2563eb; }
+  .tab-btn:active { background: #f1f5f9; }
+
+  /* ═══════════════════ 캘린더 ═══════════════════ */
+  .cal-header {
+    display: flex; justify-content: space-between; align-items: center;
+    background: white; border-radius: 1rem; padding: 0.5rem; margin-bottom: 0.75rem;
+    border: 1px solid #e2e8f0;
+  }
+  .cal-nav-btn {
+    width: 38px; height: 38px;
+    border-radius: 10px; background: #f1f5f9; border: none;
+    font-size: 14px; cursor: pointer; font-family: inherit;
+  }
+  .cal-nav-btn:active { background: #e2e8f0; }
+  .cal-month { font-size: 1rem; font-weight: 800; color: #0f172a; }
+
+  .cal-grid {
+    background: white;
+    border-radius: 1rem;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 1rem;
+  }
+  .cal-week {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .cal-week > div {
+    text-align: center;
+    padding: 8px 0;
+    font-size: 11px;
+    font-weight: 800;
+    color: #64748b;
+  }
+  .cal-week > div:first-child { color: #ef4444; }
+  .cal-week > div:last-child { color: #3b82f6; }
+
+  .cal-body {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    background: #f1f5f9;
+    gap: 1px;
+  }
+  .cal-cell {
+    background: white;
+    min-height: 68px;
+    padding: 5px 4px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .cal-cell.empty { background: #f8fafc; cursor: default; }
+  .cal-cell:not(.empty):active { background: #f8fafc; }
+  .cal-date { font-size: 12px; font-weight: 700; color: #334155; }
+  .cal-date.sun { color: #ef4444; }
+  .cal-date.sat { color: #3b82f6; }
+  .event-dot {
+    font-size: 9.5px;
+    background: #eff6ff;
+    color: #2563eb;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .event-dot:active { background: #dbeafe; }
+
+  .month-toggle {
+    background: white;
+    border-radius: 0.85rem;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 6px;
+    overflow: hidden;
+  }
+  .month-toggle-btn {
+    width: 100%;
+    padding: 12px 16px;
+    background: none;
+    border: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 700;
+    color: #475569;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+  }
+  .month-toggle-content {
+    padding: 12px 16px;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    font-size: 13px;
+    color: #475569;
+  }
+  .month-toggle-content.hidden { display: none; }
+
+  /* ═══════════════════ AI 채팅 ═══════════════════ */
+  .chat-container {
+    background: white;
+    border-radius: 1.25rem;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 240px);
+    min-height: 460px;
+  }
+  .chat-header {
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .chat-avatar {
+    width: 32px; height: 32px;
+    background: #2563eb;
+    color: white;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 800;
+    flex-shrink: 0;
+  }
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .msg-user { display: flex; justify-content: flex-end; }
+  .msg-ai { display: flex; gap: 6px; align-items: flex-end; }
+  .msg-user > div, .msg-ai > div:last-child { max-width: 78%; }
+  .bubble-user {
+    background: #2563eb;
+    color: white;
+    padding: 9px 13px;
+    border-radius: 18px 18px 4px 18px;
+    font-size: 14px;
+    line-height: 1.55;
+    word-break: break-word;
+  }
+  .bubble-ai {
+    background: #f1f5f9;
+    color: #0f172a;
+    padding: 9px 13px;
+    border-radius: 18px 18px 18px 4px;
+    font-size: 14px;
+    line-height: 1.55;
+    word-break: break-word;
+  }
+  .msg-time {
+    font-size: 10px;
+    color: #94a3b8;
+    margin-top: 3px;
+  }
+  .msg-user .msg-time { text-align: right; }
+
+  .typing-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #94a3b8;
+    display: inline-block;
+    animation: typingBounce 1.2s infinite;
+  }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes typingBounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }
+
+  .quick-row {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 8px 12px;
+    border-top: 1px solid #f1f5f9;
+    scrollbar-width: none;
+  }
+  .quick-row::-webkit-scrollbar { display: none; }
+  .quick-btn {
+    font-size: 11.5px;
+    background: #eff6ff;
+    color: #2563eb;
+    border: 1px solid #bfdbfe;
+    border-radius: 9999px;
+    padding: 5px 12px;
+    white-space: nowrap;
+    cursor: pointer;
+    font-family: inherit;
+    flex-shrink: 0;
+  }
+
+  .chat-input-row {
+    border-top: 1px solid #e2e8f0;
+    padding: 10px 12px;
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+  }
+  .chat-input {
+    flex: 1;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    padding: 9px 14px;
+    font-size: 14px;
+    outline: none;
+    resize: none;
+    max-height: 100px;
+    font-family: inherit;
+  }
+  .chat-input:focus { border-color: #2563eb; }
+  .send-btn {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: #2563eb;
+    color: white;
+    border: none;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+  .send-btn:disabled { opacity: 0.5; }
+
+  /* ═══════════════════ 유튜브 스타일 율하TV ═══════════════════ */
+  #sec-tv { background: #0a0a0a; min-height: calc(100vh - 70px); color: white; padding: 0; }
+
+  .yt-container {
+    display: flex;
+    flex-direction: column;
+    padding: 0 0 1.5rem;
+  }
+
+  .yt-main {
+    width: 100%;
+    background: #000;
+  }
+
+  .yt-player {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    background: #000;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .yt-player img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    cursor: zoom-in;
+  }
+  .yt-player iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+  .yt-player-empty {
+    color: rgba(255,255,255,0.4);
+    text-align: center;
+    padding: 2rem;
+  }
+  .yt-player-empty .ei { font-size: 56px; opacity: 0.3; margin-bottom: 1rem; }
+
+  .yt-info {
+    padding: 1rem 1.25rem 1.25rem;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .yt-info-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    background: rgba(45,110,58,0.95);
+    border-radius: 14px;
+    font-size: 10px;
+    font-weight: 800;
+    margin-bottom: 0.6rem;
+  }
+  .yt-info-title {
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.35;
+    margin-bottom: 0.5rem;
+    color: white;
+  }
+  .yt-info-meta {
+    font-size: 12px;
+    color: rgba(255,255,255,0.55);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .yt-info-memo {
+    font-size: 13px;
+    color: rgba(255,255,255,0.75);
+    line-height: 1.55;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .yt-sidebar {
+    padding: 1rem 1.25rem 0;
+  }
+  .yt-sidebar-title {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .yt-sidebar-count {
+    font-size: 11px;
+    color: rgba(255,255,255,0.5);
+    font-weight: 700;
+  }
+
+  .yt-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .yt-item {
+    display: flex;
+    gap: 10px;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 10px;
+    transition: background 0.15s;
+  }
+  .yt-item:active { background: rgba(255,255,255,0.06); }
+  .yt-item.playing { background: rgba(37,99,235,0.15); }
+  .yt-item.playing .yt-item-title { color: #93c5fd; }
+
+  .yt-item-thumb {
+    width: 140px;
+    height: 80px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #1a1a1a;
+    position: relative;
+  }
+  .yt-item-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .yt-item-thumb .video-badge {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #1e3a8a 0%, #2d6e3a 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+  }
+  .yt-item-typebadge {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    background: rgba(0,0,0,0.75);
+    color: white;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .yt-item-info {
+    flex: 1;
+    min-width: 0;
+    padding-top: 2px;
+  }
+  .yt-item-title {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: white;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-bottom: 4px;
+  }
+  .yt-item-meta {
+    font-size: 11px;
+    color: rgba(255,255,255,0.5);
+  }
+
+  .yt-refresh-btn {
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 700;
+  }
+
+  .yt-loading {
+    text-align: center;
+    padding: 4rem 1.5rem;
+    color: rgba(255,255,255,0.5);
+  }
+  .yt-spinner {
+    width: 44px; height: 44px;
+    border: 4px solid rgba(255,255,255,0.1);
+    border-top-color: rgba(255,255,255,0.6);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 1rem;
+  }
+
+  /* 데스크탑/태블릿에서 가로 레이아웃 (선택) */
+  @media (min-width: 768px) {
+    .yt-container { flex-direction: row; padding: 1rem; gap: 1rem; }
+    .yt-main { flex: 1; max-width: 65%; }
+    .yt-sidebar {
+      width: 35%;
+      max-height: calc(100vh - 100px);
+      overflow-y: auto;
+      padding: 0;
+    }
+  }
+
+  /* ═══════════════════ 공유 자료 모달 ═══════════════════ */
+  .share-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1100; backdrop-filter: blur(4px); }
+  .share-modal.open { display: flex; flex-direction: column; }
+
+  .share-head {
+    background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+    color: white;
+    padding: calc(var(--safe-top) + 0.85rem) 1rem 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+    flex-shrink: 0;
+  }
+  .share-back {
+    width: 36px; height: 36px;
+    background: rgba(255,255,255,0.18);
+    border: none;
+    color: white;
+    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .share-title-wrap { flex: 1; min-width: 0; }
+  .share-title { font-size: 15px; font-weight: 800; }
+  .share-subtitle { font-size: 11px; opacity: 0.85; font-weight: 500; margin-top: 1px; }
+
+  .share-body {
+    flex: 1;
+    overflow-y: auto;
+    background: #f8fafc;
+    padding: 1rem;
+  }
+
+  .share-file {
+    background: white;
+    border-radius: 0.85rem;
+    padding: 0.85rem 1rem;
+    margin-bottom: 8px;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .share-file-icon {
+    width: 38px; height: 38px;
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .share-file-icon.pdf { background: #fee2e2; color: #dc2626; }
+  .share-file-icon.image { background: #dbeafe; color: #2563eb; }
+  .share-file-icon.video { background: #fef3c7; color: #d97706; }
+  .share-file-icon.doc { background: #dbeafe; color: #1e40af; }
+  .share-file-icon.sheet { background: #d1fae5; color: #047857; }
+  .share-file-icon.slide { background: #fed7aa; color: #c2410c; }
+  .share-file-icon.file { background: #e2e8f0; color: #64748b; }
+
+  .share-file-info { flex: 1; min-width: 0; }
+  .share-file-name {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #0f172a;
+    line-height: 1.35;
+    margin-bottom: 3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .share-file-meta {
+    font-size: 11px;
+    color: #94a3b8;
+  }
+
+  .share-file-actions {
+    display: flex;
+    gap: 5px;
+    flex-shrink: 0;
+  }
+  .share-file-btn {
+    width: 36px; height: 36px;
+    border-radius: 9px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+  .share-file-btn.view { background: #eff6ff; color: #2563eb; }
+  .share-file-btn.view:active { background: #dbeafe; }
+  .share-file-btn.download { background: #f0fdf4; color: #16a34a; }
+  .share-file-btn.download:active { background: #dcfce7; }
+
+  .share-subfolder {
+    background: white;
+    border-radius: 0.85rem;
+    padding: 0.85rem 1rem;
+    margin-bottom: 8px;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: inherit;
+  }
+  .share-subfolder-icon {
+    width: 38px; height: 38px;
+    border-radius: 9px;
+    background: #fef3c7;
+    color: #d97706;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .share-subfolder-name {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #0f172a;
+    flex: 1;
+  }
+
+  .share-empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #94a3b8;
+  }
+  .share-empty .ei { font-size: 48px; margin-bottom: 0.5rem; opacity: 0.5; }
+
+  /* 파일 미리보기 (PDF, 이미지 등) */
+  .preview-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1200; flex-direction: column; }
+  .preview-modal.open { display: flex; }
+  .preview-head {
+    padding: calc(var(--safe-top) + 0.85rem) 1rem 0.85rem;
+    display: flex; align-items: center; gap: 10px;
+    color: white;
+    background: rgba(0,0,0,0.7);
+    flex-shrink: 0;
+  }
+  .preview-head-title {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .preview-body {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: #000;
+  }
+  .preview-body iframe { width: 100%; height: 100%; border: none; }
+  .preview-body img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+
+  .tv-loading {
+    text-align: center;
+    padding: 4rem 1.5rem;
+    color: rgba(255,255,255,0.5);
+  }
+  .tv-spinner {
+    width: 44px; height: 44px;
+    border: 4px solid rgba(255,255,255,0.1);
+    border-top-color: rgba(255,255,255,0.6);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 1rem;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .tv-empty { text-align: center; padding: 4rem 2rem; color: rgba(255,255,255,0.4); }
+  .tv-empty-icon { font-size: 56px; opacity: 0.3; margin-bottom: 1rem; }
+
+  .hero {
+    position: relative;
+    width: 100%;
+    height: 60vh;
+    min-height: 380px;
+    max-height: 560px;
+    overflow: hidden;
+    cursor: pointer;
+    background: #0a0a0a;
+  }
+  .hero-bg {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    filter: brightness(0.85);
+  }
+  .hero-video-bg {
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, #1e3a8a 0%, #2d6e3a 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 64px; color: white; opacity: 0.9;
+  }
+  .hero-gradient {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.85) 100%);
+  }
+  .hero-content {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 1.5rem 1.25rem 1.5rem;
+    color: white;
+  }
+  .hero-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    background: rgba(45,110,58,0.95);
+    border-radius: 16px;
+    font-size: 10px;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+  }
+  .hero-title {
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.3;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  }
+  .hero-meta { font-size: 12px; opacity: 0.85; }
+
+  .gallery-section {
+    padding: 1.25rem 0 2rem;
+  }
+  .gallery-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0 1.25rem 0.85rem;
+  }
+  .gallery-title { font-size: 16px; font-weight: 700; }
+  .gallery-count { font-size: 12px; color: rgba(255,255,255,0.5); font-weight: 700; }
+
+  .gallery-scroll {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 0 1.25rem 0.5rem;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .gallery-scroll::-webkit-scrollbar { display: none; }
+  .gallery-item {
+    flex-shrink: 0;
+    width: 220px;
+    scroll-snap-align: start;
+    cursor: pointer;
+  }
+  .gallery-thumb {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #1a1a1a;
+    margin-bottom: 8px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+  }
+  .gallery-img { width: 100%; height: 100%; object-fit: cover; }
+  .gallery-video-thumb {
+    width: 100%; height: 100%;
+    background: linear-gradient(135deg, #1e3a8a 0%, #2d6e3a 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; color: white; opacity: 0.9;
+  }
+  .gallery-badge {
+    position: absolute; top: 6px; right: 6px;
+    padding: 3px 8px;
+    background: rgba(0,0,0,0.7);
+    border-radius: 10px;
+    font-size: 9.5px;
+    font-weight: 700;
+    color: white;
+  }
+  .gallery-name {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-bottom: 2px;
+  }
+  .gallery-date { font-size: 11px; color: rgba(255,255,255,0.45); }
+
+  .viewer { display: none; position: fixed; inset: 0; background: #000; z-index: 2000; }
+  .viewer.open { display: block; }
+  .viewer-slides {
+    display: flex;
+    width: 100%; height: 100%;
+    transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .viewer-slide {
+    flex-shrink: 0;
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .viewer-img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .viewer-video { width: 100%; max-width: 100%; max-height: 80vh; aspect-ratio: 16/9; border: none; }
+  .viewer-header {
+    position: absolute; top: 0; left: 0; right: 0;
+    padding: calc(var(--safe-top) + 0.85rem) 1rem 0.85rem;
+    background: linear-gradient(180deg, rgba(0,0,0,0.7), transparent);
+    z-index: 10;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .viewer-progress { flex: 1; height: 3px; background: rgba(255,255,255,0.25); border-radius: 2px; overflow: hidden; }
+  .viewer-progress-fill { height: 100%; background: white; transition: width 0.3s; }
+  .viewer-close {
+    width: 34px; height: 34px;
+    background: rgba(255,255,255,0.2);
+    border: none; border-radius: 50%;
+    color: white; font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .viewer-footer {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 1.25rem 1.25rem calc(var(--safe-bottom) + 1.5rem);
+    background: linear-gradient(0deg, rgba(0,0,0,0.85), transparent);
+    color: white;
+  }
+  .viewer-title { font-size: 18px; font-weight: 700; margin-bottom: 0.4rem; line-height: 1.3; }
+  .viewer-memo { font-size: 13px; opacity: 0.85; margin-bottom: 0.5rem; }
+  .viewer-meta { font-size: 11px; opacity: 0.65; }
+
+  /* ═══════════════════ AI 심층분석 ═══════════════════ */
+  .ref-card {
+    border-radius: 1.25rem;
+    padding: 1.25rem;
+    text-align: center;
+    font-weight: 700;
+    color: white;
+    display: block;
+    text-decoration: none;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  .ref-card:active { transform: scale(0.98); }
+  .ref-card-1 { background: white; color: #1e40af; border: 3px solid #2563eb; }
+  .ref-card-2 { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
+  .ref-card-title { font-size: 1.05rem; font-weight: 800; margin-bottom: 0.3rem; }
+  .ref-card-sub { font-size: 0.78rem; opacity: 0.8; }
+
+  .qna-toggle {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 0.85rem;
+    padding: 12px 14px;
+    width: 100%;
+    text-align: left;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #1e40af;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-family: inherit;
+  }
+  .qna-toggle.green { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
+  .qna-content { margin-bottom: 12px; }
+  .qna-content.hidden { display: none; }
+  .qna-img {
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 8px;
+    cursor: pointer;
+  }
+
+  /* 모달 */
+  .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 1rem; backdrop-filter: blur(4px); }
+  .modal.open { display: flex; }
+  .modal-card {
+    background: white; border-radius: 1.25rem; width: 100%; max-width: 420px;
+    max-height: 88vh; display: flex; flex-direction: column; overflow: hidden;
+  }
+  .modal-head {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .modal-head h3 { font-size: 1.05rem; font-weight: 800; color: #0f172a; }
+  .modal-body { padding: 1.25rem; overflow-y: auto; }
+  .modal-foot {
+    padding: 0.85rem 1.25rem;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+    display: flex; gap: 8px; justify-content: flex-end;
+  }
+  .modal-btn {
+    padding: 8px 16px;
+    border-radius: 9999px;
+    font-size: 13px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .modal-btn-cancel { background: #f1f5f9; color: #475569; }
+  .modal-btn-save { background: #2563eb; color: white; }
+  .modal-btn-delete { background: #ef4444; color: white; }
+
+  .form-group { margin-bottom: 0.85rem; }
+  .form-label { display: block; font-size: 11px; color: #94a3b8; font-weight: 800; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-input {
+    width: 100%; padding: 8px 10px; border: 1px solid #e2e8f0; border-radius: 8px;
+    font-size: 14px; outline: none; font-family: inherit; box-sizing: border-box;
+  }
+  .form-input:focus { border-color: #2563eb; }
+  .form-input[readonly] { background: #f8fafc; color: #64748b; }
+  textarea.form-input { resize: none; min-height: 70px; }
+  .view-row { padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
+  .view-row:last-child { border-bottom: none; }
+  .view-label { font-size: 11px; color: #94a3b8; font-weight: 800; margin-bottom: 3px; text-transform: uppercase; }
+  .view-val { font-size: 14px; color: #1e293b; white-space: pre-line; }
+
+  /* 이미지 모달 */
+  .img-modal {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+    z-index: 1500; align-items: center; justify-content: center; padding: 1rem;
+  }
+  .img-modal.open { display: flex; }
+  .img-modal img { max-width: 100%; max-height: 100%; border-radius: 12px; }
+  .img-modal-close {
+    position: absolute; top: 1rem; right: 1rem;
+    width: 40px; height: 40px;
+    background: rgba(255,255,255,0.2);
+    border: none; border-radius: 50%;
+    color: white; font-size: 20px; cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════════
+     로그인 오버레이 (자동 로그인 버튼 포함)
+════════════════════════════════════════════════════════════ -->
+<div id="login-overlay">
+  <div class="login-card">
+    <div style="text-align:center; margin-bottom:1.5rem;">
+      <img src="https://lh3.googleusercontent.com/d/1tSnOUP4wDuDkDcHEz1-Yv51mis4S0Ql7"
+           style="width:60px;height:60px;object-fit:contain;margin:0 auto 0.75rem;display:block;"/>
+      <h2 style="font-size:1.35rem;font-weight:900;color:#0f172a;">김해율하고등학교</h2>
+      <p style="font-size:0.78rem;color:#2563eb;font-weight:800;letter-spacing:1px;margin-top:3px;">진로진학 · 가정 알림판</p>
+    </div>
+
+    <!-- 자동 로그인 영역 -->
+    <div id="auto-login-section" class="hidden" style="margin-bottom:1rem;">
+      <button class="auto-login-btn" onclick="doAutoLogin()" id="auto-login-btn">
+        <span id="auto-login-text">자동 로그인</span>
+      </button>
+      <button onclick="showManualLogin()"
+              style="width:100%;margin-top:8px;padding:8px;background:none;border:none;color:#64748b;font-size:0.82rem;font-weight:600;cursor:pointer;font-family:inherit;">
+        다른 계정으로 로그인
+      </button>
+      <div style="text-align:center;margin:1.25rem 0 1rem;color:#cbd5e1;font-size:0.75rem;font-weight:700;letter-spacing:1px;">
+        — OR —
+      </div>
+    </div>
+
+    <!-- 수동 로그인 폼 -->
+    <div id="manual-login-section">
+      <div style="margin-bottom:0.75rem;">
+        <label style="font-size:0.72rem;color:#64748b;font-weight:800;margin-bottom:5px;display:block;">아이디</label>
+        <input type="text" id="login-id" class="login-input" placeholder="아이디" autocomplete="username">
+      </div>
+      <div style="margin-bottom:0.85rem;">
+        <label style="font-size:0.72rem;color:#64748b;font-weight:800;margin-bottom:5px;display:block;">비밀번호</label>
+        <input type="password" id="login-pw" class="login-input" placeholder="비밀번호" autocomplete="current-password">
+      </div>
+
+      <div class="remember-toggle" style="margin-bottom:1rem;">
+        <input type="checkbox" id="remember-chk" checked>
+        <label for="remember-chk">자동 로그인 (아이디·비밀번호 저장)</label>
+      </div>
+
+      <div id="login-error" class="hidden" style="background:#fef2f2;color:#dc2626;padding:8px 12px;border-radius:8px;font-size:0.82rem;text-align:center;margin-bottom:0.75rem;font-weight:600;"></div>
+
+      <button onclick="doLogin()"
+              style="width:100%;padding:0.9rem;background:#2563eb;color:white;border:none;border-radius:0.85rem;font-size:0.95rem;font-weight:800;cursor:pointer;font-family:inherit;">
+        로그인
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- 앱 본체 -->
+<div id="app-body" class="hidden">
+
+  <header class="app-header">
+    <div class="header-row">
+      <div class="header-logo">
+        <img src="https://lh3.googleusercontent.com/d/1tSnOUP4wDuDkDcHEz1-Yv51mis4S0Ql7" alt="로고"/>
+      </div>
+      <div class="header-title">
+        <h1>김해율하고등학교</h1>
+        <p id="header-sub">진로진학 · 가정 알림판</p>
+      </div>
+      <div class="header-actions">
+        <button class="header-btn" onclick="doLogout()" title="로그아웃">⏻</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- 1. 홈 -->
+    <section id="sec-home" class="section active">
+      <h2 class="section-title">진로진학 시스템 안내</h2>
+
+      <div class="card">
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <div style="background:#dbeafe;color:#2563eb;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0;">01</div>
+          <div>
+            <h4 style="font-size:0.95rem;font-weight:800;color:#0f172a;margin-bottom:4px;">진학 정보의 일원화</h4>
+            <p style="font-size:0.85rem;color:#475569;line-height:1.55;">분산된 대입 정보를 통합하여 접근성 향상</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <div style="background:#dbeafe;color:#2563eb;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0;">02</div>
+          <div>
+            <h4 style="font-size:0.95rem;font-weight:800;color:#0f172a;margin-bottom:4px;">학생·학부모 맞춤 서비스</h4>
+            <p style="font-size:0.85rem;color:#475569;line-height:1.55;">복잡한 대입 정보를 학생·학부모 관점에서 재구성</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="background:linear-gradient(135deg, #eff6ff, #ffffff);border-color:#bfdbfe;">
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <div style="background:#2563eb;color:white;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0;">03</div>
+          <div>
+            <h4 style="font-size:0.95rem;font-weight:800;color:#1e40af;margin-bottom:4px;">데이터 기반 지속 업데이트</h4>
+            <p style="font-size:0.85rem;color:#1e3a8a;line-height:1.55;">변화하는 입시 전형을 지속 업데이트</p>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="section-title" style="margin-top:1.5rem;">학생·학부모 공유 자료</h2>
+
+      <div onclick="openShareFolder('briefing', '대입 설명회 자료집')"
+           class="card card-link" style="border-left:4px solid #3b82f6; cursor:pointer;">
+        <div style="font-size:2rem;">📚</div>
+        <div style="flex:1;">
+          <h4 style="font-size:0.95rem;font-weight:800;color:#0f172a;margin-bottom:2px;">대입 설명회 자료집</h4>
+          <p style="font-size:0.8rem;color:#475569;">교내 설명회 배포 자료 및 핵심 영상</p>
+        </div>
+        <div style="color:#3b82f6;font-weight:800;">›</div>
+      </div>
+
+      <div onclick="openShareFolder('admission', '수시·정시 전형 요강')"
+           class="card card-link" style="border-left:4px solid #10b981; cursor:pointer;">
+        <div style="font-size:2rem;">📑</div>
+        <div style="flex:1;">
+          <h4 style="font-size:0.95rem;font-weight:800;color:#0f172a;margin-bottom:2px;">수시·정시 전형 요강</h4>
+          <p style="font-size:0.8rem;color:#475569;">주요 대학별 최신 모집 요강</p>
+        </div>
+        <div style="color:#10b981;font-weight:800;">›</div>
+      </div>
+    </section>
+
+    <!-- 2. 캘린더 -->
+    <section id="sec-calendar" class="section">
+      <h2 class="section-title">대입 일정 캘린더</h2>
+
+      <div class="cal-header">
+        <button class="cal-nav-btn" onclick="changeMonth(-1)">◀</button>
+        <div class="cal-month" id="cal-month-label">2026년 5월</div>
+        <button class="cal-nav-btn" onclick="changeMonth(1)">▶</button>
+      </div>
+
+      <div class="cal-grid">
+        <div class="cal-week">
+          <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
+        </div>
+        <div class="cal-body" id="cal-body"></div>
+      </div>
+
+      <h3 style="font-size:0.95rem;font-weight:800;color:#334155;margin:1.5rem 0 0.75rem;">📅 월별 상세 일정</h3>
+      <div id="month-toggles"></div>
+    </section>
+
+    <!-- 3. AI 심층분석 -->
+    <section id="sec-ref" class="section">
+      <h2 class="section-title">AI 진로진학 심층분석</h2>
+      <p style="font-size:0.8rem;color:#64748b;margin-bottom:1rem;">노트북엘엠 기반 심화 분석 자료</p>
+
+      <a href="https://notebooklm.google.com/notebook/8a6dddc5-5c0f-4ceb-ab1b-b31b44278af7/preview"
+         target="_blank" class="ref-card ref-card-1">
+        <div class="ref-card-title">📊 성적 기반 진로 가늠</div>
+        <div class="ref-card-sub">클릭하여 AI 페이지로 이동 →</div>
+      </a>
+
+      <a href="https://notebooklm.google.com/notebook/3b679ce9-f080-4d8f-a381-b41ad5cbb00c/preview"
+         target="_blank" class="ref-card ref-card-2">
+        <div class="ref-card-title">🗺️ 김해율하고 교육과정 연계 로드맵</div>
+        <div class="ref-card-sub">클릭하여 AI 페이지로 이동 →</div>
+      </a>
+
+      <div class="card" style="margin-top:1.5rem;">
+        <h3 style="font-size:1rem;font-weight:800;color:#0f172a;margin-bottom:0.85rem;padding-bottom:0.5rem;border-bottom:1px solid #e2e8f0;">🤖 예시 질문</h3>
+
+        <h4 style="font-size:0.85rem;font-weight:800;color:#1d4ed8;margin-bottom:0.5rem;">📊 성적 기반 진로 질문</h4>
+
+        <button class="qna-toggle" onclick="toggleQna('q1')">
+          <span>Q. 학생 맞춤형 학교생활기록부 활동 방법은?</span><span>▼</span>
+        </button>
+        <div id="q1" class="qna-content hidden">
+          <img class="qna-img" src="https://lh3.googleusercontent.com/d/1R2hEV-7wZSiifX4ZrjjR64dcOxDvFK5B" onclick="openImg(this.src)">
+          <img class="qna-img" src="https://lh3.googleusercontent.com/d/1SeRPHrgRKKNWps4krJDpZh_3JrNxkKAa" onclick="openImg(this.src)">
+        </div>
+
+        <button class="qna-toggle" onclick="toggleQna('q2')">
+          <span>Q. 학종 면접 준비 방법은?</span><span>▼</span>
+        </button>
+        <div id="q2" class="qna-content hidden">
+          <img class="qna-img" src="https://lh3.googleusercontent.com/d/1MnWAUT_PYMhG7gUUFAfmYxyaALFtsBFk" onclick="openImg(this.src)">
+          <img class="qna-img" src="https://lh3.googleusercontent.com/d/1W3Zk6Pw4xTtPEFH3KGAY9Vye70zQIACw" onclick="openImg(this.src)">
+        </div>
+
+        <button class="qna-toggle" onclick="toggleQna('q3')">
+          <span>Q. 고교학점제 교과선택과목 조언은?</span><span>▼</span>
+        </button>
+        <div id="q3" class="qna-content hidden">
+          <img class="qna-img" src="https://lh3.googleusercontent.com/d/1KnOjr_ekQbz9TRtAShcHHa4fpM5YUr5m" onclick="openImg(this.src)">
+        </div>
+
+        <button class="qna-toggle" onclick="toggleQna('q4')">
+          <span>Q. 서울대 면접평가와 기출질문은?</span><span>▼</span>
+        </button>
+        <div id="q4" class="qna-content hidden">
+          <img class="qna-img" src="https://lh3.googleusercontent.com/d/1Ynq5xn-l3YxPVVaCMjsyExro7RJ2eGDd" onclick="openImg(this.src)">
+          <img class="qna-img" src="https://lh3.googleusercontent.com/d/1y17-Gtk9_cFYktFydfUjMV7Mdgs-B4_n" onclick="openImg(this.src)">
+        </div>
+
+        <button class="qna-toggle" onclick="toggleQna('q5')">
+          <span>Q. 내신 국영수사과 3.2, 부산대 교과전형은?</span><span>▼</span>
+        </button>
+        <div id="q5" class="qna-content hidden">
+          <img class="qna-img" src="https://lh3.googleusercontent.com/d/1h-uNy4tvSYfzUkP5L7KQgM9gd6mdwHpN" onclick="openImg(this.src)">
+          <img class="qna-img" src="https://lh3.googleusercontent.com/d/1TfVsgklY57PrTHYSST3zApsEKfAeLK5e" onclick="openImg(this.src)">
+        </div>
+
+        <h4 style="font-size:0.85rem;font-weight:800;color:#15803d;margin:1rem 0 0.5rem;padding-top:0.85rem;border-top:1px solid #e2e8f0;">🗺️ 로드맵 설계 질문</h4>
+
+        <button class="qna-toggle green" onclick="toggleQna('q7')">
+          <span>Q. 김해율하고에서 교사 로드맵은?</span><span>▼</span>
+        </button>
+        <div id="q7" class="qna-content hidden">
+          <img class="qna-img" src="https://lh3.googleusercontent.com/d/1b5K2Te5rkkuWgGsgEE3F4BLKZz9LRL68" onclick="openImg(this.src)">
+          <img class="qna-img" src="https://lh3.googleusercontent.com/d/1nhDcSWmrcQY_GFgaE5vQGlv3jMzVXMEU" onclick="openImg(this.src)">
+        </div>
+
+        <button class="qna-toggle green" onclick="toggleQna('q8')">
+          <span>Q. 의학계열 진학 준비는?</span><span>▼</span>
+        </button>
+        <div id="q8" class="qna-content hidden">
+          <img class="qna-img" src="https://lh3.googleusercontent.com/d/12xreWho9OdWwAhgEYqFygXD-0P0DLZ2k" onclick="openImg(this.src)">
+          <img class="qna-img" src="https://lh3.googleusercontent.com/d/170g4wIfWwh7QU4LK8pDNtAR270Lj9TbU" onclick="openImg(this.src)">
+        </div>
+
+        <button class="qna-toggle green" onclick="toggleQna('q9')">
+          <span>Q. 군인·경찰직 준비 가이드는?</span><span>▼</span>
+        </button>
+        <div id="q9" class="qna-content hidden">
+          <img class="qna-img" src="https://lh3.googleusercontent.com/d/1KmPLrWZRW1_cqlO6gbtK1O7HOXsGbtdv" onclick="openImg(this.src)">
+          <img class="qna-img" src="https://lh3.googleusercontent.com/d/13NPhhCHiS_JAWU4TR7KTqxUOs1tLCz8D" onclick="openImg(this.src)">
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. AI 채팅 -->
+    <section id="sec-chat" class="section">
+      <h2 class="section-title">💬 스마트 진로 Chat</h2>
+      <p style="font-size:0.8rem;color:#64748b;margin-bottom:0.85rem;">2027학년도 수시전형 자료 기반</p>
+
+      <div class="chat-container">
+        <div class="chat-header">
+          <div class="chat-avatar">AI</div>
+          <div style="flex:1;min-width:0;">
+            <p style="font-size:0.82rem;font-weight:800;color:#0f172a;">스마트 진로 Chat</p>
+            <p style="font-size:0.7rem;color:#94a3b8;">2027학년도 수시전형 기반</p>
+          </div>
+          <button onclick="clearChat()" style="font-size:0.7rem;color:#94a3b8;background:#f8fafc;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;font-family:inherit;font-weight:700;">초기화</button>
+        </div>
+
+        <div class="chat-messages" id="chat-messages"></div>
+
+        <div class="quick-row">
+          <button class="quick-btn" onclick="sendQuick('내신 3등급으로 갈 수 있는 대학은?')">내신 3등급</button>
+          <button class="quick-btn" onclick="sendQuick('학생부종합전형 준비 방법은?')">학종 준비</button>
+          <button class="quick-btn" onclick="sendQuick('수능 최저 없는 수시 전형은?')">최저 없는 전형</button>
+          <button class="quick-btn" onclick="sendQuick('2027학년도 논술전형 변경점은?')">논술 변경</button>
+          <button class="quick-btn" onclick="sendQuick('수시 6회 지원 전략은?')">지원 전략</button>
+        </div>
+
+        <div class="chat-input-row">
+          <textarea id="chat-input" class="chat-input" rows="1" placeholder="질문을 입력하세요..."
+                    onkeydown="handleChatKey(event)" oninput="autoResize(this)"></textarea>
+          <button id="send-btn" class="send-btn" onclick="sendMessage()">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+      <p style="font-size:0.7rem;color:#94a3b8;text-align:center;margin-top:8px;">AI 답변은 참고용입니다. 중요한 입시 결정은 담임 선생님과 상담하세요.</p>
+    </section>
+
+    <!-- 5. TV 알림판 -->
+    <section id="sec-tv" class="section">
+      <div id="tv-container">
+        <div class="tv-loading">
+          <div class="tv-spinner"></div>
+          <p>공지를 불러오는 중...</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <nav class="bottom-tabs">
+    <button class="tab-btn active" onclick="showTab('home', this)">
+      <span class="tab-icon">🏠</span>
+      <span class="tab-label">홈</span>
+    </button>
+    <button class="tab-btn" onclick="showTab('calendar', this)">
+      <span class="tab-icon">📅</span>
+      <span class="tab-label">일정</span>
+    </button>
+    <button class="tab-btn" onclick="showTab('ref', this)">
+      <span class="tab-icon">📊</span>
+      <span class="tab-label">분석</span>
+    </button>
+    <button class="tab-btn" onclick="showTab('chat', this)">
+      <span class="tab-icon">💬</span>
+      <span class="tab-label">채팅</span>
+    </button>
+    <button class="tab-btn" onclick="showTab('tv', this)">
+      <span class="tab-icon">📺</span>
+      <span class="tab-label">율하TV</span>
+    </button>
+  </nav>
+
+</div>
+
+
+<!-- 캘린더 일정 모달 -->
+<div id="event-modal" class="modal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3 id="event-modal-title">일정 상세</h3>
+      <button onclick="closeEventModal()" style="background:#f1f5f9;border:none;width:30px;height:30px;border-radius:50%;font-size:14px;cursor:pointer;color:#64748b;">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="event-view-mode">
+        <div class="view-row"><div class="view-label">행사명</div><div id="ev-title" class="view-val"></div></div>
+        <div class="view-row"><div class="view-label">주관 부서</div><div id="ev-dept" class="view-val"></div></div>
+        <div class="view-row"><div class="view-label">날짜</div><div id="ev-date" class="view-val"></div></div>
+        <div class="view-row"><div class="view-label">시간</div><div id="ev-time" class="view-val"></div></div>
+        <div class="view-row"><div class="view-label">장소</div><div id="ev-loc" class="view-val"></div></div>
+        <div class="view-row"><div class="view-label">내용</div><div id="ev-desc" class="view-val"></div></div>
+      </div>
+      <div id="event-edit-mode" class="hidden">
+        <div class="form-group"><label class="form-label">행사명</label><input type="text" id="ev-input-title" class="form-input" placeholder="행사명"></div>
+        <div class="form-group"><label class="form-label">주관 부서</label><input type="text" id="ev-input-dept" class="form-input" placeholder="예: 3학년부"></div>
+        <div class="form-group"><label class="form-label">날짜</label><input type="text" id="ev-input-date" class="form-input" readonly></div>
+        <div class="form-group"><label class="form-label">시간</label><input type="text" id="ev-input-time" class="form-input" placeholder="예: 14:00-15:00"></div>
+        <div class="form-group"><label class="form-label">장소</label><input type="text" id="ev-input-loc" class="form-input" placeholder="예: 4층"></div>
+        <div class="form-group"><label class="form-label">내용</label><textarea id="ev-input-desc" class="form-input" rows="3" placeholder="세부 내용"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="modal-btn modal-btn-cancel" onclick="closeEventModal()">닫기</button>
+      <button id="btn-event-delete" class="modal-btn modal-btn-delete hidden" onclick="deleteEvent_()">삭제</button>
+      <button id="btn-event-save" class="modal-btn modal-btn-save hidden" onclick="saveEvent_()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 이미지 모달 -->
+<div id="img-modal" class="img-modal" onclick="closeImg(event)">
+  <button class="img-modal-close" onclick="closeImg(event)">✕</button>
+  <img id="img-modal-src" src="" alt="" onclick="event.stopPropagation()">
+</div>
+
+<!-- 공유 자료 모달 (대입 설명회 / 전형 요강) -->
+<div id="share-modal" class="share-modal">
+  <div class="share-head">
+    <button class="share-back" onclick="closeShareModal()">‹</button>
+    <div class="share-title-wrap">
+      <div class="share-title" id="share-modal-title">자료실</div>
+      <div class="share-subtitle" id="share-modal-subtitle">파일을 불러오는 중...</div>
+    </div>
+    <button class="share-back" onclick="refreshShareFolder()" title="새로고침" style="font-size:14px;">🔄</button>
+  </div>
+  <div class="share-body" id="share-body">
+    <div class="yt-loading">
+      <div class="yt-spinner"></div>
+      <p style="color:#64748b;font-size:13px;">자료를 불러오는 중...</p>
+    </div>
+  </div>
+</div>
+
+<!-- 파일 미리보기 모달 -->
+<div id="preview-modal" class="preview-modal">
+  <div class="preview-head">
+    <button class="share-back" onclick="closePreview()">‹</button>
+    <div class="preview-head-title" id="preview-title"></div>
+    <button class="share-back" onclick="downloadCurrentPreview()" title="다운로드">⬇</button>
+  </div>
+  <div class="preview-body" id="preview-body"></div>
+</div>
+
+
+<script>
 // ════════════════════════════════════════════════════════════
-//  김해율하고등학교 통합 모바일 앱 — Code.gs
-//  ★ 기존 진로진학 AI 프로젝트의 Code.gs를 이 파일로 덮어쓰세요
-//
-//  포함 기능:
-//  • 진로진학 AI 채팅 (Gemini 2.5 Flash + 드라이브 RAG)
-//  • 대입 일정 캘린더 (같은 프로젝트 → events 데이터 자동 공유)
-//  • 학부모 가정 알림판 (율하TV의 TV3 드라이브 폴더 직접 읽기)
-//  • 자동 로그인 (아이디·비밀번호 기억)
+//  상수
 // ════════════════════════════════════════════════════════════
-
-var SCHOOL_NAME = '김해율하고등학교';
-var PROPS       = PropertiesService.getScriptProperties();
-
-// 학부모 TV (TV3) — 율하TV 송출 앱의 학부모TV 폴더 ID
-// (율하TV가 같은 폴더에 파일을 올리면 학부모 앱에서 그대로 보임)
-var TV3_FOLDER_ID = '199YWDq-br6haQQKS1-OaIehOPjD9gG1Y';
-var TV3_META_KEY  = 'meta_tv3_';
-
-// 가정 알림판은 24시간 접근 가능 → 시간대 슬롯 무시
-var IGNORE_TIME_SLOTS_FOR_HOME = true;
+var APP_ID = '김해율하고';
+var APP_PW = '2011';
+var LS_KEY = 'kimhae_app_credentials';
+var SS_TOKEN_KEY = 'kimhae_auth_token';
+var SS_USER_KEY  = 'kimhae_auth_user';
 
 
 // ════════════════════════════════════════════════════════════
-//  🔧 진단 도구 (편집기에서 직접 실행)
+//  자동 로그인 / 로그인 UI
 // ════════════════════════════════════════════════════════════
+function loadSavedCreds() {
+  try {
+    var raw = localStorage.getItem(LS_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
+}
 
-/**
- * 현재 프로젝트의 PropertiesService에 어떤 데이터가 저장돼 있는지 확인
- * → Apps Script 편집기에서 이 함수를 선택하고 ▶ 실행 → 로그 보기
- */
-function diagnose() {
-  var all = PROPS.getProperties();
-  Logger.log('═══════ 진단 시작 ═══════');
-  Logger.log('전체 키 개수: ' + Object.keys(all).length);
-  Logger.log('전체 키 목록: ' + Object.keys(all).join(', '));
+function saveCreds(id, pw) {
+  localStorage.setItem(LS_KEY, JSON.stringify({ id: id, pw: pw }));
+}
 
-  // events 키 상세 확인
-  var rawEvents = PROPS.getProperty('events');
-  if (!rawEvents) {
-    Logger.log('❌ "events" 키가 없습니다. 이 프로젝트에는 캘린더 데이터가 저장돼 있지 않습니다.');
+function clearCreds() {
+  localStorage.removeItem(LS_KEY);
+}
+
+function initLoginScreen() {
+  var saved = loadSavedCreds();
+  var autoSec  = document.getElementById('auto-login-section');
+
+  if (saved && saved.id) {
+    autoSec.classList.remove('hidden');
+    document.getElementById('auto-login-text').textContent = saved.id + ' 으로 자동 로그인';
+    document.getElementById('login-id').value = saved.id;
   } else {
-    var evts = JSON.parse(rawEvents);
-    var dates = Object.keys(evts);
-    Logger.log('✅ "events" 키 발견 — 등록된 날짜 ' + dates.length + '개');
-    Logger.log('날짜 목록: ' + dates.sort().join(', '));
-
-    // 첫 3개 일정 샘플 출력
-    var sample = dates.slice(0, 3).map(function(d){
-      return d + ' → ' + JSON.stringify(evts[d]);
-    }).join('\n');
-    Logger.log('샘플:\n' + sample);
+    autoSec.classList.add('hidden');
   }
-
-  // 다른 캘린더 관련 키 점검 (혹시 이름이 다를 수 있음)
-  var calLike = Object.keys(all).filter(function(k){
-    return /event|calendar|일정|schedule/i.test(k);
-  });
-  if (calLike.length) {
-    Logger.log('🔎 캘린더 관련 의심 키: ' + calLike.join(', '));
-  }
-
-  Logger.log('═══════ 진단 끝 ═══════');
-  return {
-    keyCount: Object.keys(all).length,
-    keys: Object.keys(all),
-    hasEvents: !!rawEvents,
-    eventDates: rawEvents ? Object.keys(JSON.parse(rawEvents)) : []
-  };
 }
 
-/**
- * 다른 프로젝트(기존 진로진학 AI)에서 events 데이터를 가져와 이 프로젝트에 복원
- * → 기존 프로젝트의 Apps Script 편집기에서 dumpEventsAsJson()을 실행 →
- *   출력된 JSON 문자열을 복사 → 이 프로젝트에서 restoreEventsFromJson(JSON문자열) 실행
- */
-function dumpEventsAsJson() {
-  var raw = PROPS.getProperty('events');
-  if (!raw) {
-    Logger.log('이 프로젝트에는 events 데이터가 없습니다.');
-    return '';
-  }
-  Logger.log('═══ 아래 JSON 전체를 복사해서 복원하려는 프로젝트의 restoreEventsFromJson() 인자로 전달하세요 ═══');
-  Logger.log(raw);
-  Logger.log('═══ 끝 (길이: ' + raw.length + ' 문자) ═══');
-  return raw;
+function showManualLogin() {
+  document.getElementById('auto-login-section').classList.add('hidden');
+  document.getElementById('login-id').focus();
 }
 
-function restoreEventsFromJson(jsonStr) {
-  if (!jsonStr || typeof jsonStr !== 'string') {
-    throw new Error('JSON 문자열을 인자로 전달하세요. 예: restoreEventsFromJson(\'{"2026-05-15":[...]}\')');
-  }
-  var parsed = JSON.parse(jsonStr); // 형식 검증
-  PROPS.setProperty('events', jsonStr);
-  Logger.log('✅ ' + Object.keys(parsed).length + '개 날짜 복원 완료');
-  return { success: true, dates: Object.keys(parsed).length };
-}
+function doAutoLogin() {
+  var saved = loadSavedCreds();
+  if (!saved) { showManualLogin(); return; }
 
-/**
- * 테스트용 샘플 일정 1개 등록 — 캘린더 화면에 보이는지 확인용
- */
-function addTestEvent() {
-  var today = new Date();
-  var y = today.getFullYear();
-  var m = today.getMonth() + 1;
-  var d = today.getDate();
-  var key = y + '-' + (m < 10 ? '0' + m : m) + '-' + (d < 10 ? '0' + d : d);
+  var btn = document.getElementById('auto-login-btn');
+  btn.disabled = true;
+  document.getElementById('auto-login-text').textContent = '로그인 중...';
 
-  var events = PROPS.getProperty('events');
-  events = events ? JSON.parse(events) : {};
-  if (!events[key]) events[key] = [];
-  events[key].push({
-    title: '테스트 일정 (연동 확인용)',
-    dept: '시스템',
-    time: '00:00',
-    loc: '테스트',
-    desc: '이 일정이 캘린더에 보이면 연동 정상.'
-  });
-  PROPS.setProperty('events', JSON.stringify(events));
-  Logger.log('✅ ' + key + '에 테스트 일정 등록 완료. 앱에서 새로고침해서 확인하세요.');
-}
-
-
-// ── 최초 1회 실행 ─────────────────────────────────────────
-function setupAll() {
-  // 일반(학부모/학생) + 관리자 계정
-  var users = {
-    '김해율하고': '2011',
-    '성중재':     '4321'
-  };
-  PROPS.setProperty('auth_users', JSON.stringify(users));
-
-  // Gemini API 키
-  PROPS.setProperty('gemini_api_key', 'AIzaSyA-WW1OOxQJISle6dx81KqPb26c4E36H-A');
-
-  // 진로진학 RAG용 드라이브 파일 ID
-  PROPS.setProperty('drive_file_ids', '1HSvOJUD2eo3aPF8YC_3_rduw9_dwjUKC');
-
-  Logger.log('✅ 통합 앱 설정 완료');
-}
-
-
-// ── 웹앱 진입점 ───────────────────────────────────────────
-function doGet(e) {
-  return HtmlService.createTemplateFromFile('Index')
-    .evaluate()
-    .setTitle(SCHOOL_NAME + ' 진로·알림판')
-    .addMetaTag('viewport', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no')
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
-}
-
-
-// ════════════════════════════════════════════════════════════
-//  1. 진로진학 AI 채팅 (Gemini 2.5 Flash + Drive RAG)
-//     ★ 기존 함수명 chatWithGroq 유지 (이름만 그대로, 실제 모델은 Gemini)
-// ════════════════════════════════════════════════════════════
-
-var BASE_SYSTEM_PROMPT =
-'당신은 김해율하고등학교 전용 진로진학 AI 상담사입니다.\n\n' +
-'[절대 규칙]\n' +
-'- 반드시 순수한 한국어로만 답변합니다.\n' +
-'- 한자, 영어, 일본어, 중국어, 러시아어 등 어떤 외국어도 절대 사용하지 않습니다.\n' +
-'- 외래어가 필요한 경우 한글로 표기합니다. 예: 에세이, 인터뷰 등\n\n' +
-'[역할]\n' +
-'- 김해율하고 학생과 학부모의 진로·진학 관련 질문에 답변합니다.\n' +
-'- 대입 전형(수시·정시), 학생부, 내신, 면접, 고교학점제 등을 안내합니다.\n' +
-'- 학교 특성에 맞는 현실적이고 구체적인 조언을 제공합니다.\n\n' +
-'[답변 원칙]\n' +
-'- 반드시 아래 [참고 자료]에 있는 내용을 우선적으로 활용하여 답변합니다.\n' +
-'- 참고 자료에 없는 내용은 "해당 내용은 자료에 없습니다. 담임 선생님께 확인하세요."라고 안내합니다.\n' +
-'- 답변은 핵심만 담아 너무 길지 않게 작성합니다.\n' +
-'- 마크다운 형식(**, ## 등)은 사용하지 않고 자연스러운 문장으로 답변합니다.';
-
-function getDriveFileContents() {
-  var idsRaw = PROPS.getProperty('drive_file_ids') || '';
-  if (!idsRaw.trim()) return '';
-  var ids = idsRaw.split(',').map(function(s){return s.trim();}).filter(Boolean);
-  var combined = '';
-  ids.forEach(function(id){
-    try {
-      var file = DriveApp.getFileById(id);
-      combined += '\n\n' + file.getBlob().getDataAsString('UTF-8');
-    } catch(e) {
-      Logger.log('파일 읽기 실패: ' + id + ' / ' + e.message);
+  performLogin(saved.id, saved.pw, true, function(err){
+    if (err) {
+      btn.disabled = false;
+      document.getElementById('auto-login-text').textContent = '재시도';
+      clearCreds();
+      showErr(err);
     }
   });
-  return combined.trim();
 }
 
-function chatWithGroq(messages) {
-  var apiKey = PROPS.getProperty('gemini_api_key');
-  if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY') {
-    return { error: 'Gemini API 키가 설정되지 않았습니다. setupAll()을 실행해 주세요.' };
-  }
+function doLogin() {
+  var id = document.getElementById('login-id').value.trim();
+  var pw = document.getElementById('login-pw').value;
+  var remember = document.getElementById('remember-chk').checked;
 
-  var driveContent = getDriveFileContents();
-  var systemPrompt = driveContent
-    ? BASE_SYSTEM_PROMPT + '\n\n[참고 자료]\n' + driveContent
-    : BASE_SYSTEM_PROMPT;
+  if (!id || !pw) { showErr('아이디와 비밀번호를 입력하세요'); return; }
 
-  var contents = messages.map(function(m){
-    return {
-      role:  m.role === 'user' ? 'user' : 'model',
-      parts: [{ text: m.content }]
-    };
+  performLogin(id, pw, remember, function(err){
+    if (err) showErr(err);
   });
-
-  var payload = {
-    system_instruction: { parts: [{ text: systemPrompt }] },
-    contents: contents,
-    generationConfig: { maxOutputTokens: 1024, temperature: 0.3 }
-  };
-
-  var url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey;
-
-  try {
-    var response = UrlFetchApp.fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      payload: JSON.stringify(payload),
-      muteHttpExceptions: true
-    });
-    var result = JSON.parse(response.getContentText());
-    if (result.error) return { error: result.error.message };
-    var text = result.candidates && result.candidates[0] && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts[0] && result.candidates[0].content.parts[0].text;
-    if (!text) return { error: '응답을 받지 못했습니다. 잠시 후 다시 시도해 주세요.' };
-    return { reply: text };
-  } catch(e) {
-    return { error: '네트워크 오류가 발생했습니다.' };
-  }
 }
 
+function performLogin(id, pw, remember, done) {
+  // 1) 일반 사용자: 클라이언트 측에서 빠르게 통과
+  if (id === APP_ID && pw === APP_PW) {
+    if (remember) saveCreds(id, pw); else clearCreds();
+    enterApp(null, id);
+    done(null);
+    return;
+  }
+
+  // 2) 관리자 등: 서버 검증
+  if (typeof google === 'undefined' || !google.script) {
+    done('서버 연결이 없습니다');
+    return;
+  }
+
+  google.script.run
+    .withSuccessHandler(function(r){
+      if (r.success) {
+        if (remember) saveCreds(id, pw); else clearCreds();
+        sessionStorage.setItem(SS_TOKEN_KEY, r.token);
+        sessionStorage.setItem(SS_USER_KEY,  r.username);
+        enterApp(r.token, r.username);
+        done(null);
+      } else {
+        done(r.message || '로그인 실패');
+      }
+    })
+    .withFailureHandler(function(){ done('서버 오류'); })
+    .login(id, pw);
+}
+
+function showErr(msg) {
+  var el = document.getElementById('login-error');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  setTimeout(function(){ el.classList.add('hidden'); }, 4000);
+}
+
+function enterApp(token, username) {
+  authToken = token;
+  authUsername = username;
+
+  if (isAdmin()) {
+    var sub = document.getElementById('header-sub');
+    sub.innerHTML = '진로진학 · 가정 알림판 <span class="admin-badge">관리자</span>';
+  }
+
+  document.getElementById('login-overlay').classList.add('hidden');
+  document.getElementById('app-body').classList.remove('hidden');
+
+  initApp();
+}
+
+function doLogout() {
+  if (!confirm('로그아웃 하시겠어요?\n(저장된 자동 로그인 정보도 삭제됩니다)')) return;
+
+  if (authToken && typeof google !== 'undefined' && google.script) {
+    google.script.run.logout(authToken);
+  }
+  clearCreds();
+  sessionStorage.removeItem(SS_TOKEN_KEY);
+  sessionStorage.removeItem(SS_USER_KEY);
+  location.reload();
+}
+
+document.getElementById('login-id').addEventListener('keydown', function(e){
+  if (e.key === 'Enter') document.getElementById('login-pw').focus();
+});
+document.getElementById('login-pw').addEventListener('keydown', function(e){
+  if (e.key === 'Enter') doLogin();
+});
 
 // ════════════════════════════════════════════════════════════
-//  2. 캘린더 CRUD
-//  ★ 같은 프로젝트에 배포하면 PROPS의 'events' 키가 자동 공유됨
-//  ★ 기존 진로진학 AI에 등록한 일정이 그대로 보입니다
+//  앱 초기화
 // ════════════════════════════════════════════════════════════
+var authToken    = null;
+var authUsername = null;
 
-function getEvents() {
-  var raw = PROPS.getProperty('events');
-  if (!raw) {
-    Logger.log('[getEvents] "events" 키 없음. diagnose() 실행으로 점검하세요.');
-    return {};
-  }
-  try {
-    var parsed = JSON.parse(raw);
-    Logger.log('[getEvents] ' + Object.keys(parsed).length + '개 날짜 반환');
-    return parsed;
-  } catch(e) {
-    Logger.log('[getEvents] JSON 파싱 실패: ' + e.message);
-    return {};
-  }
-}
+function isAdmin() { return authUsername === '성중재' && authToken; }
 
-function saveEvent(date, eventData, index, token) {
-  if (!verifyAdminToken(token)) throw new Error('관리자 권한이 필요합니다.');
-  var events = getEvents();
-  if (!events[date] || !Array.isArray(events[date])) {
-    events[date] = events[date] ? [events[date]] : [];
-  }
-  if (index !== undefined && index !== null && index >= 0) {
-    events[date][index] = eventData;
-  } else {
-    events[date].push(eventData);
-  }
-  PROPS.setProperty('events', JSON.stringify(events));
-  return events;
-}
-
-function deleteEvent(date, index, token) {
-  if (!verifyAdminToken(token)) throw new Error('관리자 권한이 필요합니다.');
-  var events = getEvents();
-  if (events[date] && Array.isArray(events[date])) {
-    events[date].splice(index, 1);
-    if (events[date].length === 0) delete events[date];
-  } else {
-    delete events[date];
-  }
-  PROPS.setProperty('events', JSON.stringify(events));
-  return events;
-}
-
-
-// ════════════════════════════════════════════════════════════
-//  3. 인증 (로그인/로그아웃/토큰)
-//  ★ 같은 프로젝트라서 sessions 키도 자동 공유
-// ════════════════════════════════════════════════════════════
-
-function login(username, password) {
-  var usersJson = PROPS.getProperty('auth_users');
-  if (!usersJson) return { success: false, message: '계정 정보가 없습니다. setupAll()을 실행하세요.' };
-
-  var users = JSON.parse(usersJson);
-  if (users[username] && users[username] === password) {
-    var token  = Utilities.getUuid();
-    var expiry = new Date().getTime() + 30 * 24 * 60 * 60 * 1000; // 30일
-    var sessions = JSON.parse(PROPS.getProperty('sessions') || '{}');
-    sessions[token] = { username: username, expiry: expiry };
-    PROPS.setProperty('sessions', JSON.stringify(sessions));
-    return { success: true, token: token, username: username };
-  }
-  return { success: false, message: '아이디 또는 비밀번호가 올바르지 않습니다.' };
-}
-
-// 기존 코드 호환을 위해 boolean 반환 (있으면 true)
-function verifyToken(token) {
-  return !!_getSessionUsername(token);
-}
-
-function verifyAdminToken(token) {
-  return _getSessionUsername(token) === '성중재';
-}
-
-// 자동 로그인 검증 — 토큰이 유효하면 사용자명 반환
-function checkSession(token) {
-  var username = _getSessionUsername(token);
-  if (username) return { success: true, username: username };
-  return { success: false };
-}
-
-function logout(token) {
-  var sessions = JSON.parse(PROPS.getProperty('sessions') || '{}');
-  delete sessions[token];
-  PROPS.setProperty('sessions', JSON.stringify(sessions));
-  return true;
-}
-
-function _getSessionUsername(token) {
-  if (!token) return null;
-  var sessions = JSON.parse(PROPS.getProperty('sessions') || '{}');
-  var s = sessions[token];
-  if (!s) return null;
-  if (new Date().getTime() > s.expiry) {
-    delete sessions[token];
-    PROPS.setProperty('sessions', JSON.stringify(sessions));
-    return null;
-  }
-  return s.username;
-}
-
-
-// ════════════════════════════════════════════════════════════
-//  4. 학부모 가정 알림판
-//  ★ 율하TV의 학부모TV(TV3) 드라이브 폴더를 직접 읽음
-//  ★ 율하TV에서 파일을 올리면 → 학부모 앱에 자동 노출됨
-// ════════════════════════════════════════════════════════════
-
-var IMAGE_MIMES = {
-  'image/jpeg':1,'image/jpg':1,'image/png':1,
-  'image/gif':1,'image/webp':1,'image/bmp':1
-};
-var VIDEO_MIMES = {
-  'video/mp4':1,'video/mpeg4':1,'video/x-m4v':1,
-  'video/quicktime':1,'video/x-msvideo':1,
-  'video/webm':1,'video/x-ms-wmv':1,'video/3gpp':1
-};
-
-function getHomeNotices() {
-  try {
-    var folder = DriveApp.getFolderById(TV3_FOLDER_ID);
-    var today  = _todayStr();
-    var result = [];
-
-    var it = folder.getFiles();
-    while (it.hasNext()) {
-      var file = it.next();
-      var mime = (file.getMimeType() || '').toLowerCase();
-      var type = null;
-      if (IMAGE_MIMES[mime])      type = 'image';
-      else if (VIDEO_MIMES[mime]) type = 'video';
-      if (!type) continue;
-
-      var id      = file.getId();
-      // 메타데이터는 같은 프로젝트의 PROPS에서 읽음.
-      // 율하TV가 별도 프로젝트라면 메타데이터는 없을 수 있으며,
-      // 그 경우 모든 파일을 표시(아래 _isPlayable이 빈 메타데이터를 통과시킴)
-      var metaStr = PROPS.getProperty(TV3_META_KEY + id);
-      var meta    = metaStr ? JSON.parse(metaStr) : {};
-
-      var notice = {
-        id:           id,
-        name:         file.getName(),
-        type:         type,
-        mimeType:     file.getMimeType() || (type === 'video' ? 'video/mp4' : 'image/jpeg'),
-        size:         file.getSize(),
-        modifiedTime: file.getLastUpdated().toISOString(),
-        startDate:    meta.startDate || '',
-        endDate:      meta.endDate   || '',
-        memo:         meta.memo      || '',
-        timeSlots:    meta.timeSlots || []
-      };
-
-      if (!_isPlayable(notice, today)) continue;
-      result.push(notice);
+window.addEventListener('load', function(){
+  // 이미 로그인된 세션이 있는지 확인
+  var stoken = sessionStorage.getItem(SS_TOKEN_KEY);
+  var suser  = sessionStorage.getItem(SS_USER_KEY);
+  if (stoken && suser) {
+    if (typeof google !== 'undefined' && google.script) {
+      google.script.run
+        .withSuccessHandler(function(r){
+          if (r.success) enterApp(stoken, r.username);
+          else { sessionStorage.clear(); initLoginScreen(); }
+        })
+        .withFailureHandler(function(){ initLoginScreen(); })
+        .checkSession(stoken);
+      return;
     }
+  }
+  initLoginScreen();
+});
 
-    result.sort(function(a, b) {
-      var aStart = a.startDate || a.modifiedTime;
-      var bStart = b.startDate || b.modifiedTime;
-      return new Date(bStart) - new Date(aStart);
-    });
+function initApp() {
+  // 캘린더 시작 월: 현재 월
+  var now = new Date();
+  currentYear = now.getFullYear();
+  currentMonth = now.getMonth();
 
-    return { success: true, notices: result, count: result.length };
-  } catch (e) {
-    return { success: false, error: e.toString() };
+  // ★ 캘린더 일정 로드 (진로진학 AI에 등록된 일정이 그대로 보임)
+  if (typeof google !== 'undefined' && google.script) {
+    google.script.run
+      .withSuccessHandler(function(d){
+        events = d || {};
+        renderCalendar();
+        renderMonthToggles();
+      })
+      .withFailureHandler(function(err){
+        console.error('일정 불러오기 실패:', err);
+        renderCalendar();
+        renderMonthToggles();
+      })
+      .getEvents();
+  } else {
+    renderCalendar();
+    renderMonthToggles();
+  }
+
+  initChatGreeting();
+}
+
+
+// ════════════════════════════════════════════════════════════
+//  탭 전환
+// ════════════════════════════════════════════════════════════
+function showTab(tabId, btn) {
+  document.querySelectorAll('.section').forEach(function(s){ s.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('sec-' + tabId).classList.add('active');
+  if (btn) btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // TV 탭 진입 시 공지 로드 (매번 새로 로드해서 항상 최신 상태 유지)
+  if (tabId === 'tv') {
+    loadTvNotices();
+  }
+  // 캘린더 탭 진입 시 일정 다시 로드
+  if (tabId === 'calendar') {
+    refreshEvents();
   }
 }
 
-function _isPlayable(f, today) {
-  // 메타데이터가 있을 때만 날짜 필터 적용. 없으면 항상 표시.
-  if (f.startDate && f.startDate > today) return false;
-  if (f.endDate   && f.endDate   < today) return false;
-  if (IGNORE_TIME_SLOTS_FOR_HOME) return true;
-  return true;
+// 캘린더 일정 새로고침 (서버에서 다시 가져옴)
+function refreshEvents() {
+  if (typeof google === 'undefined' || !google.script) return;
+  google.script.run
+    .withSuccessHandler(function(d){
+      events = d || {};
+      renderCalendar();
+      renderMonthToggles();
+    })
+    .getEvents();
 }
 
 
 // ════════════════════════════════════════════════════════════
-//  5. 공유 자료 폴더 파일 목록 (대입 설명회 / 전형 요강)
-//     앱 내에서 파일 목록 보고 다운로드/미리보기 가능
+//  캘린더 (★ 같은 프로젝트의 events 데이터 자동 공유)
 // ════════════════════════════════════════════════════════════
+var currentYear = 2026;
+var currentMonth = 4;
+var events = {};
+var selectedDate = '';
+var selectedIndex = -1;
 
-// 공유 자료 폴더 ID
-var SHARE_FOLDERS = {
-  briefing:  '1Zzc6yxO4QAIIikNlyDF_KhW0673wjDCv',  // 대입 설명회 배포 자료집
-  admission: '1SgEzFPVmf8uBIoIHg2QGdYOQ9-_Ngs-3'   // 최신 수시/정시 전형 요강
-};
+function renderCalendar() {
+  var body = document.getElementById('cal-body');
+  body.innerHTML = '';
+  document.getElementById('cal-month-label').textContent =
+    currentYear + '년 ' + (currentMonth + 1) + '월';
 
-function getShareFiles(folderKey) {
-  try {
-    var folderId = SHARE_FOLDERS[folderKey];
-    if (!folderId) return { success: false, error: '알 수 없는 폴더입니다.' };
+  var firstDay = new Date(currentYear, currentMonth, 1).getDay();
+  var lastDate = new Date(currentYear, currentMonth + 1, 0).getDate();
 
-    var folder = DriveApp.getFolderById(folderId);
-    var result = [];
+  for (var i = 0; i < firstDay; i++) {
+    var d = document.createElement('div');
+    d.className = 'cal-cell empty';
+    body.appendChild(d);
+  }
 
-    var it = folder.getFiles();
-    while (it.hasNext()) {
-      var file = it.next();
-      var mime = file.getMimeType() || '';
-      var name = file.getName();
+  for (var dn = 1; dn <= lastDate; dn++) {
+    var dk = currentYear + '-' + pad2(currentMonth + 1) + '-' + pad2(dn);
+    var cell = document.createElement('div');
+    cell.className = 'cal-cell';
+    var dow = new Date(currentYear, currentMonth, dn).getDay();
+    var dateClass = 'cal-date' + (dow === 0 ? ' sun' : dow === 6 ? ' sat' : '');
 
-      // 파일 종류 판별
-      var type = 'file';
-      if (mime.indexOf('pdf')   !== -1) type = 'pdf';
-      else if (mime.indexOf('image') !== -1) type = 'image';
-      else if (mime.indexOf('video') !== -1) type = 'video';
-      else if (mime.indexOf('word')  !== -1 || mime.indexOf('document') !== -1) type = 'doc';
-      else if (mime.indexOf('sheet') !== -1 || mime.indexOf('excel')    !== -1) type = 'sheet';
-      else if (mime.indexOf('presentation') !== -1 || mime.indexOf('powerpoint') !== -1) type = 'slide';
-
-      result.push({
-        id:           file.getId(),
-        name:         name,
-        type:         type,
-        mimeType:     mime,
-        size:         file.getSize(),
-        modifiedTime: file.getLastUpdated().toISOString(),
-        viewUrl:      'https://drive.google.com/file/d/' + file.getId() + '/view',
-        downloadUrl:  'https://drive.google.com/uc?export=download&id=' + file.getId(),
-        previewUrl:   'https://drive.google.com/file/d/' + file.getId() + '/preview'
+    var eventsHtml = '';
+    if (events[dk]) {
+      var de = Array.isArray(events[dk]) ? events[dk] : [events[dk]];
+      de.forEach(function(e, idx){
+        var t = typeof e === 'string' ? e : (e.title || '');
+        eventsHtml += '<div class="event-dot" onclick="event.stopPropagation();openEventModal(\'' + dk + '\',' + idx + ',false)">' + escapeHtml(t) + '</div>';
       });
+      (function(date){
+        cell.onclick = function(){ openEventModal(date, 0, false); };
+      })(dk);
+    } else {
+      (function(date){
+        cell.onclick = function(){ if (isAdmin()) openEventModal(date, -1, true); };
+      })(dk);
     }
 
-    // 폴더 안의 하위 폴더도 (한 단계만) 포함
-    var folders = folder.getFolders();
-    var subfolders = [];
-    while (folders.hasNext()) {
-      var sub = folders.next();
-      subfolders.push({
-        id: sub.getId(),
-        name: sub.getName(),
-        url: 'https://drive.google.com/drive/folders/' + sub.getId()
-      });
-    }
+    cell.innerHTML = '<div class="' + dateClass + '">' + dn + '</div>' + eventsHtml;
+    body.appendChild(cell);
+  }
 
-    // 최신 수정일 순 정렬
-    result.sort(function(a, b) {
-      return new Date(b.modifiedTime) - new Date(a.modifiedTime);
-    });
-
-    return {
-      success: true,
-      files: result,
-      subfolders: subfolders,
-      count: result.length
-    };
-  } catch (e) {
-    return { success: false, error: e.toString() };
+  var rem = (7 - ((firstDay + lastDate) % 7)) % 7;
+  for (var j = 0; j < rem; j++) {
+    var d2 = document.createElement('div');
+    d2.className = 'cal-cell empty';
+    body.appendChild(d2);
   }
 }
 
-
-function _todayStr() {
-  var d = new Date();
-  return d.getFullYear() + '-' + _pad2(d.getMonth() + 1) + '-' + _pad2(d.getDate());
+function changeMonth(delta) {
+  currentMonth += delta;
+  if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+  else if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+  renderCalendar();
 }
-function _pad2(n) { return n < 10 ? '0' + n : String(n); }
+
+function renderMonthToggles() {
+  var c = document.getElementById('month-toggles');
+  c.innerHTML = '';
+  var ny = new Date().getFullYear();
+  var nm = new Date().getMonth();
+
+  for (var m = 0; m < 11; m++) {
+    var year = ny + Math.floor((nm + m) / 12);
+    var realMon = ((nm + m) % 12) + 1;
+    var pf = year + '-' + pad2(realMon);
+    var tid = 't-' + year + '-' + realMon;
+
+    var monthEvents = Object.keys(events).filter(function(k){ return k.indexOf(pf) === 0; }).sort();
+    var lines = monthEvents.map(function(k){
+      var de = Array.isArray(events[k]) ? events[k] : [events[k]];
+      return de.map(function(e){
+        return '<li>• ' + parseInt(k.split('-')[2]) + '일: <b>' + escapeHtml(typeof e === 'string' ? e : (e.title || '')) + '</b></li>';
+      }).join('');
+    }).join('');
+
+    var div = document.createElement('div');
+    div.className = 'month-toggle';
+    div.innerHTML =
+      '<button class="month-toggle-btn" onclick="document.getElementById(\'' + tid + '\').classList.toggle(\'hidden\')">' +
+        year + '년 ' + realMon + '월 ' +
+        '<span style="font-size:11px;color:#94a3b8;">▼</span>' +
+      '</button>' +
+      '<div id="' + tid + '" class="month-toggle-content hidden">' +
+        '<ul style="list-style:none;padding:0;margin:0;line-height:1.9;">' +
+          (lines || '<li style="color:#94a3b8;">등록된 일정 없음</li>') +
+        '</ul>' +
+      '</div>';
+    c.appendChild(div);
+  }
+}
+
+function openEventModal(date, index, editMode) {
+  if (editMode && !isAdmin()) {
+    alert('일정 수정은 관리자만 가능합니다.');
+    return;
+  }
+
+  selectedDate = date;
+  selectedIndex = index;
+  var p = date.split('-');
+  var dateStr = p[0] + '년 ' + parseInt(p[1]) + '월 ' + parseInt(p[2]) + '일 (' + getWeekDayKor(date) + ')';
+
+  var eData = {};
+  if (index >= 0 && events[date]) {
+    var de = Array.isArray(events[date]) ? events[date] : [events[date]];
+    eData = de[index] || {};
+    if (typeof eData === 'string') eData = { title: eData };
+  }
+
+  var viewMode = document.getElementById('event-view-mode');
+  var editModeEl = document.getElementById('event-edit-mode');
+  var btnDel = document.getElementById('btn-event-delete');
+  var btnSave = document.getElementById('btn-event-save');
+
+  if (editMode && isAdmin()) {
+    viewMode.classList.add('hidden');
+    editModeEl.classList.remove('hidden');
+    document.getElementById('event-modal-title').textContent = index >= 0 ? '일정 수정' : '새 일정 등록';
+    document.getElementById('ev-input-title').value = eData.title || '';
+    document.getElementById('ev-input-dept').value = eData.dept || '';
+    document.getElementById('ev-input-date').value = dateStr;
+    document.getElementById('ev-input-time').value = eData.time || '';
+    document.getElementById('ev-input-loc').value = eData.loc || '';
+    document.getElementById('ev-input-desc').value = eData.desc || '';
+    btnDel.classList.toggle('hidden', index < 0);
+    btnSave.classList.remove('hidden');
+    btnSave.textContent = '저장';
+    btnSave.onclick = saveEvent_;
+  } else {
+    viewMode.classList.remove('hidden');
+    editModeEl.classList.add('hidden');
+    document.getElementById('event-modal-title').textContent = '일정 상세';
+    document.getElementById('ev-title').textContent = eData.title || '-';
+    document.getElementById('ev-dept').textContent = eData.dept || '-';
+    document.getElementById('ev-date').textContent = dateStr;
+    document.getElementById('ev-time').textContent = eData.time || '-';
+    document.getElementById('ev-loc').textContent = eData.loc || '-';
+    document.getElementById('ev-desc').textContent = eData.desc || '-';
+    btnDel.classList.add('hidden');
+    btnSave.classList.add('hidden');
+
+    if (isAdmin()) {
+      btnSave.textContent = '수정';
+      btnSave.onclick = function(){ openEventModal(date, index, true); };
+      btnSave.classList.remove('hidden');
+      if (index >= 0) btnDel.classList.remove('hidden');
+    }
+  }
+
+  document.getElementById('event-modal').classList.add('open');
+}
+
+function closeEventModal() {
+  document.getElementById('event-modal').classList.remove('open');
+  selectedDate = '';
+  selectedIndex = -1;
+}
+
+function saveEvent_() {
+  var t = document.getElementById('ev-input-title').value.trim();
+  if (!t) { alert('행사명을 입력하세요'); return; }
+  var ed = {
+    title: t,
+    dept: document.getElementById('ev-input-dept').value,
+    time: document.getElementById('ev-input-time').value,
+    loc: document.getElementById('ev-input-loc').value,
+    desc: document.getElementById('ev-input-desc').value
+  };
+  if (typeof google !== 'undefined' && google.script) {
+    google.script.run
+      .withSuccessHandler(function(d){ events = d; renderCalendar(); renderMonthToggles(); closeEventModal(); })
+      .withFailureHandler(function(e){ alert('저장 실패: ' + e.message); })
+      .saveEvent(selectedDate, ed, selectedIndex, authToken);
+  }
+}
+
+function deleteEvent_() {
+  if (!confirm('이 일정을 삭제하시겠어요?')) return;
+  if (typeof google !== 'undefined' && google.script) {
+    google.script.run
+      .withSuccessHandler(function(d){ events = d; renderCalendar(); renderMonthToggles(); closeEventModal(); })
+      .withFailureHandler(function(e){ alert('삭제 실패: ' + e.message); })
+      .deleteEvent(selectedDate, selectedIndex, authToken);
+  }
+}
+
+function getWeekDayKor(ds) { return ['일','월','화','수','목','금','토'][new Date(ds).getDay()]; }
+function pad2(n) { return n < 10 ? '0' + n : String(n); }
+
+
+// ════════════════════════════════════════════════════════════
+//  AI 채팅 (★ Code.gs의 chatWithGroq 호출)
+// ════════════════════════════════════════════════════════════
+var chatHistory = [];
+var chatWaiting = false;
+
+function initChatGreeting() {
+  var box = document.getElementById('chat-messages');
+  if (box.children.length === 0) {
+    appendMsg('ai', '안녕하세요! 김해율하고 2027학년도 수시전형 안내 AI입니다 😊\n수시 전형, 학생부, 학종, 논술 등 무엇이든 물어보세요!');
+  }
+}
+
+function appendMsg(role, text) {
+  var box = document.getElementById('chat-messages');
+  var wrap = document.createElement('div');
+  if (role === 'user') {
+    wrap.className = 'msg-user';
+    wrap.innerHTML = '<div><div class="bubble-user">' + escapeHtml(text) + '</div><div class="msg-time">' + getNow() + '</div></div>';
+  } else {
+    wrap.className = 'msg-ai';
+    wrap.innerHTML = '<div class="chat-avatar">AI</div><div><div class="bubble-ai">' + escapeHtml(text) + '</div><div class="msg-time">' + getNow() + '</div></div>';
+  }
+  box.appendChild(wrap);
+  box.scrollTop = box.scrollHeight;
+}
+
+function showTyping() {
+  var box = document.getElementById('chat-messages');
+  var wrap = document.createElement('div');
+  wrap.className = 'msg-ai';
+  wrap.id = 'typing-indicator';
+  wrap.innerHTML = '<div class="chat-avatar">AI</div><div><div class="bubble-ai" style="padding:9px 14px;"><span class="typing-dot"></span> <span class="typing-dot"></span> <span class="typing-dot"></span></div></div>';
+  box.appendChild(wrap);
+  box.scrollTop = box.scrollHeight;
+}
+function hideTyping() {
+  var t = document.getElementById('typing-indicator');
+  if (t) t.remove();
+}
+
+function sendMessage() {
+  if (chatWaiting) return;
+  var input = document.getElementById('chat-input');
+  var text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  autoResize(input);
+
+  appendMsg('user', text);
+  chatHistory.push({ role: 'user', content: text });
+  chatWaiting = true;
+  document.getElementById('send-btn').disabled = true;
+  showTyping();
+
+  if (typeof google !== 'undefined' && google.script) {
+    google.script.run
+      .withSuccessHandler(function(result){
+        hideTyping();
+        chatWaiting = false;
+        document.getElementById('send-btn').disabled = false;
+        if (result.error) {
+          appendMsg('ai', '⚠️ ' + result.error);
+        } else {
+          appendMsg('ai', result.reply);
+          chatHistory.push({ role: 'assistant', content: result.reply });
+          if (chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
+        }
+      })
+      .withFailureHandler(function(){
+        hideTyping();
+        chatWaiting = false;
+        document.getElementById('send-btn').disabled = false;
+        appendMsg('ai', '⚠️ 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+      })
+      .chatWithGroq(chatHistory);  // ★ Code.gs의 함수명과 동일
+  } else {
+    setTimeout(function(){
+      hideTyping();
+      chatWaiting = false;
+      document.getElementById('send-btn').disabled = false;
+      appendMsg('ai', '[로컬 테스트] GAS 환경에서 실행하세요.');
+    }, 1000);
+  }
+}
+
+function sendQuick(text) {
+  document.getElementById('chat-input').value = text;
+  sendMessage();
+}
+
+function clearChat() {
+  chatHistory = [];
+  document.getElementById('chat-messages').innerHTML = '';
+  initChatGreeting();
+}
+
+function handleChatKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+
+
+// ════════════════════════════════════════════════════════════
+//  율하TV (★ 유튜브 스타일: 메인 + 사이드 목록)
+// ════════════════════════════════════════════════════════════
+var tvNotices = [];
+var tvCurrentIdx = 0;
+
+function loadTvNotices() {
+  if (typeof google === 'undefined' || !google.script) return;
+
+  document.getElementById('tv-container').innerHTML =
+    '<div class="yt-loading"><div class="yt-spinner"></div><p>율하TV 공지를 불러오는 중...</p></div>';
+
+  google.script.run
+    .withSuccessHandler(function(res){
+      if (!res.success) { showTvError(res.error || '공지를 불러올 수 없습니다.'); return; }
+      tvNotices = res.notices || [];
+      tvCurrentIdx = 0;
+      renderTv();
+    })
+    .withFailureHandler(function(err){
+      showTvError('오류: ' + (err && err.message ? err.message : err));
+    })
+    .getHomeNotices();
+}
+
+function renderTv() {
+  var container = document.getElementById('tv-container');
+
+  if (!tvNotices.length) {
+    container.innerHTML =
+      '<div class="yt-loading" style="padding:5rem 2rem;">' +
+        '<div style="font-size:56px;opacity:0.3;margin-bottom:1rem;">📋</div>' +
+        '<h3 style="font-size:16px;font-weight:700;margin-bottom:0.5rem;color:rgba(255,255,255,0.7);">현재 게시 중인 공지가 없습니다</h3>' +
+        '<p style="font-size:13px;line-height:1.7;color:rgba(255,255,255,0.4);">학부모TV에 새 공지가 등록되면<br>이곳에 자동으로 표시됩니다.</p>' +
+      '</div>';
+    return;
+  }
+
+  container.innerHTML =
+    '<div class="yt-container">' +
+      '<div class="yt-main">' +
+        '<div class="yt-player" id="yt-player"></div>' +
+        '<div class="yt-info" id="yt-info"></div>' +
+      '</div>' +
+      '<div class="yt-sidebar">' +
+        '<div class="yt-sidebar-title">' +
+          '<span>📺 공지 목록</span>' +
+          '<span style="display:flex;align-items:center;gap:8px;">' +
+            '<span class="yt-sidebar-count">총 ' + tvNotices.length + '개</span>' +
+            '<button class="yt-refresh-btn" onclick="loadTvNotices()">🔄</button>' +
+          '</span>' +
+        '</div>' +
+        '<div class="yt-list" id="yt-list"></div>' +
+      '</div>' +
+    '</div>';
+
+  renderTvList();
+  playTvItem(0);
+}
+
+function renderTvList() {
+  var listEl = document.getElementById('yt-list');
+  if (!listEl) return;
+
+  listEl.innerHTML = tvNotices.map(function(notice, idx){
+    var isPlaying = idx === tvCurrentIdx;
+    var thumb;
+    if (notice.type === 'image') {
+      thumb = '<img src="https://drive.google.com/thumbnail?id=' + notice.id + '&sz=w300" loading="lazy">';
+    } else {
+      thumb = '<div class="video-badge">▶</div>';
+    }
+
+    return (
+      '<div class="yt-item ' + (isPlaying ? 'playing' : '') + '" onclick="playTvItem(' + idx + ')">' +
+        '<div class="yt-item-thumb">' +
+          thumb +
+          '<div class="yt-item-typebadge">' + (notice.type === 'video' ? '영상' : '이미지') + '</div>' +
+        '</div>' +
+        '<div class="yt-item-info">' +
+          '<div class="yt-item-title">' + escapeHtml(stripExt(notice.name)) + '</div>' +
+          '<div class="yt-item-meta">' + (formatTvDate(notice) || '게시중') + '</div>' +
+        '</div>' +
+      '</div>'
+    );
+  }).join('');
+}
+
+function playTvItem(idx) {
+  if (idx < 0 || idx >= tvNotices.length) return;
+  tvCurrentIdx = idx;
+  var notice = tvNotices[idx];
+
+  // 플레이어 영역에 렌더
+  var player = document.getElementById('yt-player');
+  if (!player) return;
+
+  if (notice.type === 'image') {
+    player.innerHTML = '<img src="https://drive.google.com/thumbnail?id=' + notice.id + '&sz=w1600" onclick="openImg(this.src)">';
+  } else {
+    player.innerHTML = '<iframe src="https://drive.google.com/file/d/' + notice.id + '/preview" allow="autoplay; encrypted-media" allowfullscreen></iframe>';
+  }
+
+  // 정보 영역
+  var info = document.getElementById('yt-info');
+  var dateText = formatTvDate(notice);
+  info.innerHTML =
+    '<div class="yt-info-badge">✓ 게시중 · ' + (notice.type === 'video' ? '동영상' : '이미지') + '</div>' +
+    '<div class="yt-info-title">' + escapeHtml(stripExt(notice.name)) + '</div>' +
+    '<div class="yt-info-meta">' +
+      (dateText ? '<span>' + dateText + '</span><span>·</span>' : '') +
+      '<span>' + (tvCurrentIdx + 1) + ' / ' + tvNotices.length + '</span>' +
+    '</div>' +
+    (notice.memo ? '<div class="yt-info-memo">' + escapeHtml(notice.memo) + '</div>' : '');
+
+  // 사이드 목록 하이라이트 갱신
+  renderTvList();
+
+  // 모바일에서 클릭 시 플레이어로 스크롤
+  if (window.innerWidth < 768) {
+    var mainArea = document.querySelector('.yt-main');
+    if (mainArea) mainArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+function formatTvDate(notice) {
+  if (notice.startDate && notice.endDate) {
+    return notice.startDate.slice(5).replace('-','/') + ' ~ ' + notice.endDate.slice(5).replace('-','/');
+  } else if (notice.startDate) {
+    return notice.startDate.slice(5).replace('-','/') + ' ~';
+  } else if (notice.endDate) {
+    return '~ ' + notice.endDate.slice(5).replace('-','/');
+  }
+  return '';
+}
+
+function stripExt(name) { return name.replace(/\.[^.]+$/, ''); }
+
+function showTvError(msg) {
+  document.getElementById('tv-container').innerHTML =
+    '<div class="yt-loading" style="padding:5rem 2rem;">' +
+      '<div style="font-size:48px;opacity:0.5;margin-bottom:1rem;">⚠️</div>' +
+      '<h3 style="font-size:16px;font-weight:700;margin-bottom:0.5rem;color:rgba(255,255,255,0.7);">오류가 발생했습니다</h3>' +
+      '<p style="font-size:13px;line-height:1.7;">' + escapeHtml(msg) + '</p>' +
+    '</div>';
+}
+
+
+// ════════════════════════════════════════════════════════════
+//  공유 자료 (대입 설명회 / 전형 요강)
+// ════════════════════════════════════════════════════════════
+var currentShareKey = null;
+var currentPreviewFile = null;
+
+function openShareFolder(folderKey, title) {
+  currentShareKey = folderKey;
+  document.getElementById('share-modal-title').textContent = title;
+  document.getElementById('share-modal-subtitle').textContent = '파일을 불러오는 중...';
+  document.getElementById('share-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  loadShareFiles(folderKey);
+}
+
+function closeShareModal() {
+  document.getElementById('share-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function refreshShareFolder() {
+  if (currentShareKey) loadShareFiles(currentShareKey);
+}
+
+function loadShareFiles(folderKey) {
+  var body = document.getElementById('share-body');
+  body.innerHTML = '<div class="yt-loading"><div class="yt-spinner" style="border-color:rgba(0,0,0,0.1);border-top-color:#2563eb;"></div><p style="color:#64748b;font-size:13px;">자료를 불러오는 중...</p></div>';
+
+  if (typeof google === 'undefined' || !google.script) {
+    body.innerHTML = '<div class="share-empty"><div class="ei">⚠</div><p>서버 연결이 없습니다.</p></div>';
+    return;
+  }
+
+  google.script.run
+    .withSuccessHandler(function(res){
+      if (!res.success) {
+        body.innerHTML = '<div class="share-empty"><div class="ei">⚠</div><p>' + escapeHtml(res.error || '불러오기 실패') + '</p></div>';
+        return;
+      }
+      renderShareFiles(res);
+    })
+    .withFailureHandler(function(err){
+      body.innerHTML = '<div class="share-empty"><div class="ei">⚠</div><p>' + escapeHtml(err && err.message ? err.message : String(err)) + '</p></div>';
+    })
+    .getShareFiles(folderKey);
+}
+
+function renderShareFiles(res) {
+  var body = document.getElementById('share-body');
+  var files = res.files || [];
+  var subs = res.subfolders || [];
+  var total = files.length + subs.length;
+
+  document.getElementById('share-modal-subtitle').textContent =
+    total > 0 ? total + '개 항목' : '자료가 없습니다';
+
+  if (total === 0) {
+    body.innerHTML = '<div class="share-empty"><div class="ei">📭</div><p>등록된 자료가 없습니다.</p></div>';
+    return;
+  }
+
+  var html = '';
+
+  // 하위 폴더 먼저
+  subs.forEach(function(folder){
+    html +=
+      '<a href="' + folder.url + '" target="_blank" class="share-subfolder">' +
+        '<div class="share-subfolder-icon">📁</div>' +
+        '<div class="share-subfolder-name">' + escapeHtml(folder.name) + '</div>' +
+        '<div style="color:#94a3b8;font-size:18px;">›</div>' +
+      '</a>';
+  });
+
+  // 파일 목록
+  files.forEach(function(file, idx){
+    var icon = fileIcon(file.type);
+    html +=
+      '<div class="share-file">' +
+        '<div class="share-file-icon ' + file.type + '">' + icon + '</div>' +
+        '<div class="share-file-info">' +
+          '<div class="share-file-name">' + escapeHtml(file.name) + '</div>' +
+          '<div class="share-file-meta">' + fmtFileSize(file.size) + ' · ' + fmtShareDate(file.modifiedTime) + '</div>' +
+        '</div>' +
+        '<div class="share-file-actions">' +
+          '<button class="share-file-btn view" onclick="previewShareFile(' + idx + ')" title="보기">👁</button>' +
+          '<a class="share-file-btn download" href="' + file.downloadUrl + '" target="_blank" title="다운로드" style="text-decoration:none;display:flex;align-items:center;justify-content:center;">⬇</a>' +
+        '</div>' +
+      '</div>';
+  });
+
+  body.innerHTML = html;
+  body._files = files; // 미리보기용 캐시
+}
+
+function fileIcon(type) {
+  var map = {
+    pdf: '📄', image: '🖼', video: '🎬',
+    doc: '📝', sheet: '📊', slide: '📊', file: '📎'
+  };
+  return map[type] || '📎';
+}
+
+function fmtFileSize(b) {
+  if (!b) return '';
+  b = parseInt(b);
+  if (b < 1024) return b + 'B';
+  if (b < 1048576) return Math.round(b/1024) + 'KB';
+  return (b/1048576).toFixed(1) + 'MB';
+}
+
+function fmtShareDate(iso) {
+  if (!iso) return '';
+  var d = new Date(iso);
+  var y = d.getFullYear();
+  var m = d.getMonth() + 1;
+  var day = d.getDate();
+  return y + '.' + m + '.' + day;
+}
+
+function previewShareFile(idx) {
+  var body = document.getElementById('share-body');
+  var files = body._files || [];
+  var file = files[idx];
+  if (!file) return;
+  currentPreviewFile = file;
+
+  document.getElementById('preview-title').textContent = file.name;
+
+  var pBody = document.getElementById('preview-body');
+  if (file.type === 'image') {
+    pBody.innerHTML = '<img src="https://drive.google.com/thumbnail?id=' + file.id + '&sz=w1600">';
+  } else {
+    // PDF, 문서, 영상 등 모두 Drive preview iframe으로 표시
+    pBody.innerHTML = '<iframe src="' + file.previewUrl + '" allow="autoplay"></iframe>';
+  }
+
+  document.getElementById('preview-modal').classList.add('open');
+}
+
+function closePreview() {
+  document.getElementById('preview-modal').classList.remove('open');
+  // iframe 정지 (영상 등)
+  document.getElementById('preview-body').innerHTML = '';
+  currentPreviewFile = null;
+}
+
+function downloadCurrentPreview() {
+  if (!currentPreviewFile) return;
+  window.open(currentPreviewFile.downloadUrl, '_blank');
+}
+
+
+// ════════════════════════════════════════════════════════════
+//  유틸
+// ════════════════════════════════════════════════════════════
+function toggleQna(id) { document.getElementById(id).classList.toggle('hidden'); }
+function openImg(src) {
+  document.getElementById('img-modal-src').src = src;
+  document.getElementById('img-modal').classList.add('open');
+}
+function closeImg(e) { if (e) e.stopPropagation(); document.getElementById('img-modal').classList.remove('open'); }
+function getNow() { var d = new Date(); return pad2(d.getHours()) + ':' + pad2(d.getMinutes()); }
+function escapeHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;').replace(/\n/g,'<br>'); }
+</script>
+
+</body>
+</html>
