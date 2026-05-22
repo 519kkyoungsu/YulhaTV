@@ -2,44 +2,45 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="김해율하고등학교 진로진학 AI 캘린더">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="description" content="김해율하고등학교 진로진학 AI">
     <meta name="theme-color" content="#2E4B8E">
     
     <title>김해율하고 진로진학 AI</title>
     
-    <!-- PWA 설정 -->
+    <!-- PWA 필수 설정 -->
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
+    
+    <!-- iOS PWA 설정 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="진로진학">
+    <meta name="mobile-web-app-capable" content="yes">
     
     <style>
-        body {
-            margin: 0;
-            padding: 0;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
         iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
             width: 100%;
-            height: 100%;
+            height: 100vh;
             border: none;
+            display: block;
         }
     </style>
 </head>
 <body>
-    <!-- GAS 앱을 iframe으로 임베드 -->
-    <iframe src="https://script.google.com/macros/s/AKfycbyRjT2r_bukrSTe0QSk4TZb3Bb-41Ja6O1C-wwWzVxx5lCjf1S7lKygRNWwEOns-Tbc/exec"></iframe>
+    <iframe src="https://script.google.com/macros/s/AKfycbyRjT2r_bukrSTe0QSk4TZb3Bb-41Ja6O1C-wwWzVxx5lCjf1S7lKygRNWwEOns-Tbc/exec" 
+            allow="fullscreen"></iframe>
     
     <script>
-        // 서비스 워커 등록
+        // 서비스 워커 등록 (반드시 등록되어야 PWA로 인식)
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js')
-                .then(reg => console.log('Service Worker 등록 성공:', reg))
-                .catch(err => console.log('Service Worker 등록 실패:', err));
-        }
-    </script>
-</body>
-</html>
+            window.addEventListener('load', ()
