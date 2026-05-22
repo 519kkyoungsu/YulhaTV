@@ -1,7 +1,7 @@
 {
-  "name": "김해율하고 진로진학 AI",
-  "short_name": "진로진학",
-  "description": "김해율하고등학교 대입 일정 캘린더",
+  "name": "김해율하TV",
+  "short_name": "김해율하TV",
+  "description": "김해율하고등학교 통합 정보 앱",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
